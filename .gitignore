@@ -1,4 +1,13 @@
 .DS_Store
 node_modules
 .scannerwork
+.sonarqube
 .secrets
+.vs
+packages
+bin
+obj
+Debug
+Release
+*.csproj.user
+*.suo
