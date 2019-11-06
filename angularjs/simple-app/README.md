@@ -1,10 +1,11 @@
 # Simple Node.js application
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=devpro.scannersamples.nodejs.simpleapp&metric=alert_status)](https://sonarcloud.io/dashboard?id=devpro.scannersamples.nodejs.simpleapp)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=devpro.scannersamples.angularjs.simpleapp&metric=alert_status)](https://sonarcloud.io/dashboard?id=devpro.scannersamples.angularjs.simpleapp)
 
 ## Run the application
 
-- Launch the Node.js process: `node app.js`
+- Install NPM dependencies: `npm install`
+- Open [app/index.html file](app/index.html) in a browser
 
 ## Run the scanner
 
