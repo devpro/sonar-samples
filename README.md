@@ -16,8 +16,9 @@ This setup is necessary to run Sonar scanner on the different projets.
     - [dotnet sonarscanner global tool](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner-for-msbuild/): `dotnet tool install --global dotnet-sonarscanner`
 
 - For Javascript applications
-  - [Node.js](https://nodejs.org/)
+  - [Node.js/NPM](https://nodejs.org/)
     - [NPM module to run SonarQube/SonarCloud analyses](https://www.npmjs.com/package/sonarqube-scanner): `npm install -g sonarqube-scanner`
+  - [Angular local setup](https://angular.io/guide/setup-local): `npm install -g @angular/cli`
 
 ## Projects
 

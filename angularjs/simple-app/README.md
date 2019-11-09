@@ -12,5 +12,5 @@
 - Run the scan (replace with the correct values):
 
   ```dos
-  sonar-scanner -D"sonar.projectKey=<projetKey>" -D"sonar.organization=<company>" -D"sonar.sources=." -D"sonar.host.url=https://sonarcloud.io" -D"sonar.login=<token>" -D"sonar.exclusions=**/node_modules/**"
+  sonar-scanner -D"sonar.projectKey=<projetKey>" -D"sonar.projectName=AngularJS Simple App Sample" -D"sonar.organization=<company>" -D"sonar.sources=." -D"sonar.host.url=https://sonarcloud.io" -D"sonar.login=<token>" -D"sonar.exclusions=**/node_modules/**"
   ```
