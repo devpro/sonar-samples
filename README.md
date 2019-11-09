@@ -28,3 +28,4 @@ Name | Language | Description
 [ASP.NET 4.5 MVC app](./dotnet/WebApp45/README.md) | .NET Framework | ASP.NET 4.5 MVC application created from VS 2019 template
 [ASP.NET Core Razor app](./dotnetcore/WebAppRazor/README.md) | .NET Core | ASP.NET Core 3.0 Razor application created from VS 2019 template
 [Simple AngularJS app](./angularjs/simple-app/README.md) | AngularJS | Simple web application (1 file)
+[Simple Angular app](./angular/simple-app/README.md) | Angular | Simple web application
