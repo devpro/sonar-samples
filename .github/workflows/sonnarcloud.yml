@@ -28,6 +28,12 @@ jobs:
         run: npm test -- --watch=false --code-coverage --browsers=ChromeHeadless || true
 
       - name: Run SonarCloud analysis
-        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONNAR_TOKEN }}
+        run: |
+          npm install -g sonar-scanner
+          sonar-scanner \
+            -Dsonar.projectKey=Aizhy_sonar-samples \
+            -Dsonar.organization=aizhy \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONNAR_TOKEN }}
