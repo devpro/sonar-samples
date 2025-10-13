@@ -25,6 +25,7 @@ module.exports = function (config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
+<<<<<<< HEAD
     browsers: ['ChromeHeadless'],
     customLaunchers: {
       ChromeHeadlessCI: {
@@ -36,6 +37,18 @@ module.exports = function (config) {
         ]
       }
     },
+=======
+    browsers: ['ChromeHeadlessCI'],
+
+customLaunchers: {
+  ChromeHeadlessCI: {
+    base: 'ChromeHeadless',
+    flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+  }
+},
+
+singleRun: true,
+>>>>>>> 0383fbb933279c77f5fb1116bb6f3a90436fa4ee
     singleRun: false,
     restartOnFileChange: true
   });
