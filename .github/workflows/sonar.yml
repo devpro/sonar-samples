@@ -35,7 +35,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          node --openssl-legacy-provider -e "process.exit(0)" # Test legacy provider works
           npm install -g sonar-scanner
           sonar-scanner \
             -Dsonar.projectKey=david-menechi_sonar-samples \
