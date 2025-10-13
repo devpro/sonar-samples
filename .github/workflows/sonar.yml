@@ -37,7 +37,7 @@ jobs:
         run: |
           npm install -g sonar-scanner
           sonar-scanner \
-            -Dsonar.projectKey=david-menechi_sonar-samples \
+            -Dsonar.projectKey=dvdmnc_sonar-samples \
             -Dsonar.organization=david-menechi \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
