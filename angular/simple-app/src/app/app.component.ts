@@ -10,5 +10,5 @@ export class AppComponent {
 }
 
 unusedFunction() {
-  console.log("Cette fonction n'est jamais utilisée !");
+  console.log("Cette fonction n'est jamais utilisée ! Test SonarCloud 2");
 }
