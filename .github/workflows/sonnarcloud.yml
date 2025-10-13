@@ -2,11 +2,6 @@ name: SonarCloud Analysis
 
 on: [push, pull_request]
 
-```yaml
-name: SonarCloud Analysis
-
-on: [push, pull_request]
-
 jobs:
   sonarcloud:
     name: Build and Analyze with SonarCloud
