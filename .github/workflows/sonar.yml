@@ -28,16 +28,12 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run tests with coverage
-        env:
-          CI: true
-          NODE_OPTIONS: "--openssl-legacy-provider"
-        run: npx ng test --code-coverage --watch=false --browsers=ChromeHeadlessCI
+        run: node run-tests.js
 
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          NODE_OPTIONS: "--openssl-legacy-provider"
         run: |
           npm install -g sonar-scanner
           sonar-scanner \
