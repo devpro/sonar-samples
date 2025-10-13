@@ -1,0 +1,84 @@
+name: SonarCloud Analysis
+
+on: [push, pull_request]
+
+```yaml
+name: SonarCloud Analysis
+
+on: [push, pull_request]
+
+jobs:
+  sonarcloud:
+    name: Build and Analyze with SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        working-directory: angular/simple-app
+        run: npm ci
+
+      - name: Build
+        working-directory: angular/simple-app
+        run: npm run build --if-present
+name: SonarCloud Analysis
+
+on: [push, pull_request]
+
+jobs:
+  sonarcloud:
+    name: Build and Analyze with SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 16
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        working-directory: angular/simple-app
+        run: npm ci
+
+      - name: Run unit tests (headless) and generate coverage
+        working-directory: angular/simple-app
+        # Run tests once in headless mode; Karma configuration will write lcov to coverage/simple-app/lcov.info
+        run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+
+      - name: Build (optional)
+        working-directory: angular/simple-app
+        run: npm run build --if-present
+
+      - name: Run SonarCloud analysis
+        working-directory: angular/simple-app
+        env:
+          # Create a secret SONAR_TOKEN in repo settings (Actions > Secrets)
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          npx sonar-scanner \
+            -Dsonar.organization=Aizhy \
+            -Dsonar.projectKey=Aizhy_sonar-samples \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.sources=src \
+            -Dsonar.exclusions=**/node_modules/**,dist/**,**/*.spec.ts \
+            -Dsonar.typescript.lcov.reportPaths=coverage/simple-app/lcov.info \
+            -Dsonar.javascript.lcov.reportPaths=coverage/simple-app/lcov.info
