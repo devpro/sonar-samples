@@ -28,7 +28,9 @@ jobs:
         run: npm ci
 
       - name: Run tests with coverage
-        run: npx ng test --code-coverage --watch=false
+        env:
+          CI: true
+        run: npx ng test --code-coverage --watch=false --browsers=ChromeHeadlessCI
 
       - name: SonarCloud Scan
         env:
