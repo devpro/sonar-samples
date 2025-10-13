@@ -28,7 +28,6 @@ jobs:
         run: npm test -- --watch=false --code-coverage --browsers=ChromeHeadless || true
 
       - name: Run SonarCloud analysis
-        # uses: SonarSource/sonarcloud-github-action@v2
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONNAR_TOKEN }}
