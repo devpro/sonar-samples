@@ -8,5 +8,8 @@ if (environment.production) {
   enableProdMode();
 }
 
+// Code smell: Variable inutilisée
+let unusedVariable = 'Cette variable n\'est jamais utilisée';
+
 platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
