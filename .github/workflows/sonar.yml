@@ -28,16 +28,18 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run tests with coverage
-        run: npm run test:ci
+        run: node run-tests.js
 
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          node --openssl-legacy-provider -e "process.exit(0)" # Test legacy provider works
           npm install -g sonar-scanner
           sonar-scanner \
             -Dsonar.projectKey=david-menechi_sonar-samples \
             -Dsonar.organization=david-menechi \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
