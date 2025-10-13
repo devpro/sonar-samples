@@ -8,7 +8,3 @@ import { Component } from '@angular/core';
 export class AppComponent {
   title = 'simple-app';
 }
-
-unusedFunction() {
-  console.log("Cette fonction n'est jamais utilisée !");
-}
