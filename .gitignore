@@ -1,14 +1,38 @@
+# Node.js / Angular
+node_modules/
+dist/
+coverage/
+.angular/
+my-angular-app/
+
+# .NET
+bin/
+obj/
+.sonarqube/
+TestResults/
+*.user
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+coverage.xml
+.coverage
+
+# Go
+coverage.out
+vendor/
+
+# Java / Maven
+target/
+*.class
+
+# SonarQube scanner cache
+.scannerwork/
+
+# Editor
+.idea/
+.vscode/
+*.swp
 .DS_Store
-node_modules
-.scannerwork
-.sonarqube
-.secrets
-.vs
-packages
-bin
-obj
-Debug
-Release
-*.csproj.user
-*.suo
-appsettings.Development.json

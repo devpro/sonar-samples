@@ -1,0 +1,50 @@
+version: '3'
+
+tasks:
+  up:
+    desc: Start SonarQube and wait until ready
+    cmds:
+      - docker compose up -d
+      - task: wait
+      - echo ""
+      - echo "SonarQube is ready → http://localhost:9000  (admin / admin)"
+
+  down:
+    desc: Stop containers, keep data
+    cmds:
+      - docker compose down
+
+  reset:
+    desc: Stop containers and wipe all data (clean slate)
+    cmds:
+      - docker compose down -v
+      - echo "All SonarQube data removed."
+
+  status:
+    desc: Show container status
+    cmds:
+      - docker compose ps
+
+  logs:
+    desc: Tail SonarQube logs
+    cmds:
+      - docker compose logs -f sonarqube
+
+  wait:
+    desc: Wait until SonarQube reports UP (used internally by 'up')
+    internal: true
+    silent: true
+    cmds:
+      - |
+        echo "Waiting for SonarQube to be ready..."
+        for i in $(seq 1 30); do
+          STATUS=$(docker compose exec -T sonarqube curl -sf http://localhost:9000/api/system/status 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+          if [ "$STATUS" = "UP" ]; then
+            echo "Status: UP"
+            exit 0
+          fi
+          echo "  [$i/30] Status: ${STATUS:-waiting}..."
+          sleep 5
+        done
+        echo "SonarQube did not become ready in time. Check: task logs"
+        exit 1
