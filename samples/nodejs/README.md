@@ -1,82 +1,48 @@
 # Node.js sample
 
-A minimal Node.js 22 application with a test suite, demonstrating JavaScript analysis with coverage reporting in SonarQube.
+A minimal Node.js 22 app with a Jest test suite, analysed with the SonarScanner CLI.
 
-## What this demonstrates
-
-- JavaScript source analysis
-- Test coverage import from Istanbul/V8 (`lcov.info`)
-- Exclusion of `node_modules` and test files from analysis
-- Inline issue detection (unused variables, code smells)
+- Project key: `sonar-samples-nodejs`
+- Coverage: Istanbul LCOV, written to `coverage/lcov.info`
+- Issues raised: [docs/rules.md#nodejs](../../docs/rules.md#nodejs)
 
 ## Prerequisites
 
-- [Node.js 22+](https://nodejs.org/)
-- SonarQube running locally (`docker compose up -d` from the repo root)
-- [SonarScanner CLI](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/sonarscanner/) — install via npm globally:
+Node.js 22+ and a running SonarQube.
+See [docs/installation.md](../../docs/installation.md).
 
-```bash
-npm install -g sonar-scanner
-```
-
-Or run it with `npx` (no install needed):
-
-```bash
-npx sonar-scanner@latest
-```
-
-## Setup
+## Run it
 
 ```bash
 npm install
+npm test          # runs Jest with --coverage
+node src/app.js   # optional, serves http://localhost:3000
 ```
 
-## Run the application
+`npm test` writes `coverage/lcov.info`.
+Without that file SonarQube reports no coverage at all, so it is worth checking it exists before scanning.
+
+## Scan it
 
 ```bash
-node src/app.js
-# Listening on http://localhost:3000
+export SONAR_TOKEN=$(task bootstrap)   # see docs/tokens.md
+task scan:nodejs
 ```
 
-## Run tests with coverage
+`task scan:nodejs` runs the scanner in Docker.
+A locally installed scanner works too, from this directory:
 
 ```bash
-npm test
+sonar-scanner -Dsonar.token="$SONAR_TOKEN"
+# or, with no install:
+npx sonar-scanner@latest -Dsonar.token="$SONAR_TOKEN"
 ```
 
-Coverage output is written to `coverage/lcov.info`, which SonarQube will import.
-
-## Create the project in SonarQube
-
-1. Open <http://localhost:9000>
-2. Log in (`admin` / your password)
-3. Click **Create project** → **Manually**
-4. Set **Project key**: `sonar-samples-nodejs`
-5. Set **Display name**: `sonar-samples / nodejs`
-6. Click **Set up** → **Locally**
-7. Generate a token and copy it
-
-## Run the scanner
-
-```bash
-sonar-scanner -Dsonar.token=<your-token>
-```
-
-Or with `npx`:
-
-```bash
-npx sonar-scanner@latest -Dsonar.token=<your-token>
-```
-
-All other properties are read from `sonar-project.properties`.
-
-## View results
-
-Open <http://localhost:9000/dashboard?id=sonar-samples-nodejs>.
+Results: <http://localhost:9000/dashboard?id=sonar-samples-nodejs>
 
 ## sonar-project.properties
 
-```properties
+```ini
 sonar.projectKey=sonar-samples-nodejs
 sonar.projectName=sonar-samples / nodejs
 sonar.sources=src
@@ -86,4 +52,26 @@ sonar.exclusions=node_modules/**
 sonar.host.url=http://localhost:9000
 ```
 
-The `sonar.token` is intentionally not stored here — pass it on the command line or via the `SONAR_TOKEN` environment variable.
+Why these:
+
+- `sonar.sources` and `sonar.tests` split the tree so test files are analysed with test-specific rules rather than counted as production code.
+- `sonar.javascript.lcov.reportPaths` must match Jest's `coverageDirectory`.
+  This is the single most common reason coverage shows as 0%.
+- `node_modules` is excluded explicitly, since dependencies are not part of the analysed code.
+
+The token is never stored here, pass it via `-Dsonar.token=` or `SONAR_TOKEN`.
+
+## Notes
+
+Jest only instruments files a test imports.
+`src/app.js` is never imported by a test, so it contributes uncovered lines to the Sonar total, which is why coverage lands at 31% and not higher.
+To report on every file regardless, add to `package.json`:
+
+```json
+"collectCoverageFrom": ["src/**/*.js"]
+```
+
+## Adapting to another project
+
+Copy `sonar-project.properties`, change `projectKey` and `projectName`, and point `sonar.javascript.lcov.reportPaths` at the real coverage output.
+The same properties work for TypeScript: use the `javascript.` prefix there too, since `sonar.typescript.lcov.reportPaths` is deprecated and ignored.

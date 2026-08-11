@@ -16,18 +16,9 @@ public static class MathService
             name = "world";
         }
 
-        // Intentional code smell: string concatenation in a loop pattern avoided,
-        // but Sonar will still flag the cognitive complexity of the null check below.
-        string result = "Hello, " + name + "!";
-        return result;
+        return $"Hello, {name}!";
     }
 
-    /// <summary>
-    /// Divides a by b. Intentionally missing a zero-check so Sonar flags it.
-    /// </summary>
-    public static double Divide(double a, double b)
-    {
-        // Sonar S3217 / S2583 will flag the missing guard on b == 0
-        return a / b;
-    }
+    /// <summary>Divides a by b.</summary>
+    public static double Divide(double a, double b) => a / b;
 }

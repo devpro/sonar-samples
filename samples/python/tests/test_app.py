@@ -2,6 +2,7 @@
 
 import pytest
 from src.app import add, greet, app as flask_app
+from src.showcase import classify, describe_role, hash_password
 
 
 @pytest.fixture
@@ -52,3 +53,19 @@ def test_add_endpoint(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["result"] == 7
+
+
+def test_describe_role():
+    assert describe_role("administrator") == "administrator"
+
+
+def test_classify_all_positive():
+    assert classify(1, 1, 1, 1) == "all-positive"
+
+
+def test_classify_unclassified():
+    assert classify(0, 0, 0, 0) == "unclassified"
+
+
+def test_hash_password_is_hex():
+    assert len(hash_password("x")) == 32

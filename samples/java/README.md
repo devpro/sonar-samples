@@ -1,80 +1,76 @@
 # Java sample
 
-A minimal Java 21 Maven project with JUnit 5 tests, demonstrating Java analysis in SonarQube using the **SonarScanner for Maven** — the idiomatic approach for Maven projects.
+A minimal Java 21 Maven project with JUnit 5 tests, analysed with the **SonarScanner for Maven**, the idiomatic choice for Maven builds.
 
-## What this demonstrates
-
-- Java source analysis with Sonar rules (bugs, vulnerabilities, code smells)
-- Test coverage import from JaCoCo
-- The SonarScanner for Maven plugin — no separate scanner install required
-- Correct JaCoCo + Sonar configuration in `pom.xml`
+- Project key: `sonar-samples-java`
+- Coverage: JaCoCo XML, written to `target/site/jacoco/jacoco.xml`
+- Issues raised: [docs/rules.md#java](../../docs/rules.md#java)
 
 ## Prerequisites
 
-- [Java 21+](https://adoptium.net/) (JDK, not JRE)
-- [Maven 3.9+](https://maven.apache.org/download.cgi)
-- SonarQube running locally (`docker compose up -d` from the repo root)
+JDK 21+ and Maven 3.9+, and a running SonarQube.
+See [docs/installation.md](../../docs/installation.md).
 
-No separate SonarScanner installation — the Maven plugin handles everything.
+No scanner to install, it is declared as a plugin in `pom.xml`.
 
-## Run the tests
-
-```bash
-mvn verify
-```
-
-This runs the test suite and generates the JaCoCo coverage report at `target/site/jacoco/jacoco.xml`.
-
-## Create the project in SonarQube
-
-1. Open <http://localhost:9000>
-2. Log in (`admin` / your password)
-3. Click **Create project** → **Manually**
-4. Set **Project key**: `sonar-samples-java`
-5. Set **Display name**: `sonar-samples / java`
-6. Click **Set up** → **Locally**
-7. Generate a token and copy it
-
-## Run the scanner
+## Run it
 
 ```bash
-mvn sonar:sonar -Dsonar.token=<your-token>
+mvn -B verify
 ```
 
-SonarQube host and project key are configured in `pom.xml` — only the token is passed on the command line.
+Use `verify`, not `test`.
+The JaCoCo `report` goal is bound to the `verify` phase, so `mvn test` runs the tests but never writes `jacoco.xml`, and the scan then reports no coverage.
 
-### Combined (test + scan in one command)
+## Scan it
 
 ```bash
-mvn verify sonar:sonar -Dsonar.token=<your-token>
+export SONAR_TOKEN=$(task bootstrap)   # see docs/tokens.md
+task scan:java
 ```
 
-## View results
+which is exactly:
 
-Open <http://localhost:9000/dashboard?id=sonar-samples-java>.
+```bash
+mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
+```
+
+Results: <http://localhost:9000/dashboard?id=sonar-samples-java>
 
 ## Key configuration in pom.xml
 
 ```xml
 <properties>
-  <!-- Tell Sonar where to find the JaCoCo report -->
+  <sonar.projectKey>sonar-samples-java</sonar.projectKey>
+  <sonar.projectName>sonar-samples / java</sonar.projectName>
+  <sonar.host.url>http://localhost:9000</sonar.host.url>
   <sonar.coverage.jacoco.xmlReportPaths>
     ${project.reporting.outputDirectory}/jacoco/jacoco.xml
   </sonar.coverage.jacoco.xmlReportPaths>
-  <sonar.projectKey>sonar-samples-java</sonar.projectKey>
-  <sonar.host.url>http://localhost:9000</sonar.host.url>
 </properties>
 ```
 
-The `sonar.token` is never stored in `pom.xml` — always pass it via `-Dsonar.token=` or the `SONAR_TOKEN` environment variable.
+The JaCoCo plugin needs two executions: `prepare-agent` before the tests to instrument them, and `report` after them to write the XML.
+Both are in `pom.xml`.
 
-## Note on the SonarScanner for Maven vs CLI
+`sonar.token` is never stored here, pass it via `-Dsonar.token=` or `SONAR_TOKEN`.
 
-For Maven projects, always prefer the Maven plugin:
+## Maven plugin vs the generic CLI
 
-| | Maven plugin | CLI scanner |
-|---|---|---|
-| Install | None (plugin declared in pom.xml) | Separate download |
-| Java compilation | Analyses compiled bytecode | Source only |
-| Accuracy | Higher — uses bytecode + source | Lower |
-| Coverage | Reads JaCoCo automatically | Requires manual path config |
+For Maven projects, always prefer the plugin:
+
+&nbsp;                | Maven plugin                    | CLI scanner
+----------------------|---------------------------------|-----------------------------
+Install               | none, declared in `pom.xml`     | separate download
+What it analyses      | compiled bytecode **and** source | source only
+Accuracy              | higher                          | lower
+Coverage              | reads JaCoCo automatically      | manual path configuration
+Dependencies          | resolved from the reactor       | invisible
+
+Analysing bytecode is what lets the Java analyser resolve types across dependencies, which many rules need to fire at all.
+
+## A note on the empty catch block
+
+`Showcase.java` swallows a `NoSuchAlgorithmException`.
+That is a genuine smell, but it raises **neither** `S2486` nor `S108`: both rules suppress when the block contains a comment.
+It is left that way deliberately, see [docs/rules.md#java](../../docs/rules.md#java).

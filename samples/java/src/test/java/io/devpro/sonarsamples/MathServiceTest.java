@@ -27,8 +27,10 @@ class MathServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "Bertrand, Hello, Bertrand!",
-        "world, Hello, world!"
+        // Expected values are single-quoted: they contain a comma, which is the
+        // CSV delimiter and would otherwise be read as an extra argument.
+        "Bertrand, 'Hello, Bertrand!'",
+        "world, 'Hello, world!'"
     })
     void greet_returnsExpectedMessage(String name, String expected) {
         assertEquals(expected, service.greet(name));

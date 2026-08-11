@@ -22,7 +22,4 @@ function add(a, b) {
   return a + b;
 }
 
-// Intentional code smell: unused variable (Sonar will flag this)
-const unusedConstant = 42;
-
 module.exports = { greet, add };

@@ -1,137 +1,90 @@
 # .NET sample
 
-A minimal ASP.NET Core 9 Web API with an xUnit test project, demonstrating how to use the **SonarScanner for .NET** (MSBuild integration).
-The generic SonarScanner CLI does not analyse .NET code.
+A minimal ASP.NET Core 10 Web API with an xUnit test project, analysed with the **SonarScanner for .NET**.
+The generic SonarScanner CLI cannot analyse C#.
 
-## What this demonstrates
-
-- C# source and Roslyn analyser integration
-- Test coverage import from Coverlet (OpenCover format)
-- The three-step MSBuild scanner flow (`begin` → `build` → `end`)
-- Solution-level analysis with multiple projects
+- Project key: `sonar-samples-dotnet`
+- Coverage: Coverlet OpenCover XML, matched by `**/coverage.opencover.xml`
+- Issues raised: [docs/rules.md#dotnet](../../docs/rules.md#dotnet)
 
 ## Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- SonarQube running locally (`docker compose up -d` from the repo root)
-- SonarScanner for .NET as a global tool:
+.NET 10 SDK and a running SonarQube.
+See [docs/installation.md](../../docs/installation.md).
+
+Plus the scanner as a global tool:
 
 ```bash
 dotnet tool install --global dotnet-sonarscanner
+dotnet sonarscanner --version    # verify; needs ~/.dotnet/tools on PATH
 ```
 
-Verify:
+Coverage comes from the `coverlet.collector` package already referenced by the test project, so nothing else needs installing.
 
-```bash
-dotnet sonarscanner --version
-```
-
-- Coverlet for coverage collection:
-
-```bash
-dotnet tool install --global coverlet.console
-```
-
-Or use the `coverlet.collector` NuGet package already referenced in the test project.
-
-## Project structure
-
-```txt
-├── src/
-│   └── SonarSamples.Api/
-│       ├── SonarSamples.Api.csproj
-│       ├── Program.cs
-│       └── MathService.cs
-├── tests/
-│   └── SonarSamples.Api.Tests/
-│       ├── SonarSamples.Api.Tests.csproj
-│       └── MathServiceTests.cs
-└── SonarSamples.sln
-```
-
-## Step 1 — Create the project in SonarQube
-
-1. Open <http://localhost:9000>
-2. Log in (`admin` / your password)
-3. Click **Create project** → **Manually**
-4. Set **Project key**: `sonar-samples-dotnet`
-5. Set **Display name**: `sonar-samples / dotnet`
-6. Click **Set up** → **Locally**
-7. Generate a token and copy it
-
-## Step 2 — Restore dependencies
+## Run it
 
 ```bash
 dotnet restore
+dotnet build --no-restore
+dotnet test --no-build --collect:"XPlat Code Coverage" \
+  -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 ```
 
-## Step 3 — Run the scanner (three-step flow)
+The trailing `Format=opencover` is required.
+Coverlet defaults to Cobertura, which this configuration does not import, and the result is a passing build with 0% coverage.
 
-The MSBuild scanner wraps your build. The sequence is always `begin` → `dotnet build` → `end`.
+## Scan it
 
-### Begin
+```bash
+export SONAR_TOKEN=$(task bootstrap)   # see docs/tokens.md
+task scan:dotnet
+```
+
+which runs [`scan.sh`](scan.sh).
+`scan.ps1` is the PowerShell equivalent, kept for convenience but not covered by CI.
+
+## The three-step flow
+
+Unlike every other sample, there is no `sonar-project.properties`.
+The scanner wraps the build, and configuration is passed as `/d:` parameters:
 
 ```bash
 dotnet sonarscanner begin \
   /k:"sonar-samples-dotnet" \
   /n:"sonar-samples / dotnet" \
   /d:sonar.host.url="http://localhost:9000" \
-  /d:sonar.token="<your-token>" \
+  /d:sonar.token="$SONAR_TOKEN" \
   /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
-```
 
-### Build
-
-```bash
 dotnet build --no-restore
-```
-
-### Run tests with coverage
-
-```bash
-dotnet test --no-build \
-  --collect:"XPlat Code Coverage" \
+dotnet test --no-build --collect:"XPlat Code Coverage" \
   -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 ```
 
-### End
+Point                   | Detail
+------------------------|----------------------------------------------------------------------------------------------
+Token in **both** steps | `begin` authenticates the upload, `end` the quality gate check
+Same working directory  | `begin` writes `.sonarqube/`; `build` and `end` must run beside it and must not delete it
+Coverage glob           | `**/coverage.opencover.xml` matches across multiple test projects
+`begin` before `build`  | the scanner injects Roslyn analysers into the build; analysing a pre-built tree finds nothing
+
+If `end` reports "No analyses found", the three steps did not share a directory.
+
+## Why this sample raises the most issues
+
+The MSBuild scanner analyses **compiled** code, so Roslyn's own analysers are imported alongside Sonar's own rules.
+They appear as `external_roslyn:*` on the dashboard.
+That is the concrete advantage of a language-specific scanner over the generic CLI, and it is visible here as a higher issue count on comparable code.
+
+## Adapting to another project
+
+Add the collector to the test project if it is missing:
 
 ```bash
-dotnet sonarscanner end /d:sonar.token="<your-token>"
+dotnet add tests/MyTests/MyTests.csproj package coverlet.collector
 ```
 
-## Step 4 — View results
-
-Open <http://localhost:9000/dashboard?id=sonar-samples-dotnet>.
-
-## Using a script
-
-Convenience scripts are provided for both platforms:
-
-```bash
-# Linux / macOS
-bash scan.sh <your-token>
-
-# Windows (PowerShell)
-.\scan.ps1 -Token <your-token>
-```
-
-## Key points about the MSBuild scanner
-
-Point                             | Detail
-----------------------------------|---------------------------------------------------------------------------------------------------------
-**Token placement**               | Required in both `begin` and `end`: it authenticates both the analysis upload and the quality gate check
-**No `sonar-project.properties`** | Configuration is passed as `/d:` parameters to `begin`
-**Coverage format**               | Sonar reads OpenCover XML; Coverlet produces it via `Format=opencover`
-**`--no-restore` / `--no-build`** | Recommended to keep the three steps clean and fast
-**Windows vs Linux**              | The tool works on both; use `/d:` syntax on all platforms
-
-## Adapting for your project
-
-Add the `coverlet.collector` package to your test project if not present:
-
-```bash
-dotnet add tests/YourTests/YourTests.csproj package coverlet.collector
-```
-
-Then use the same three-step flow. For multi-solution repos, run `begin` once at the repo root and include all solution files in the build step.
+Then use the same three steps.
+For a repo with several solutions, run `begin` once at the root and build them all between `begin` and `end`.

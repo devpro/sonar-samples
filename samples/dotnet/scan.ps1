@@ -17,7 +17,11 @@ $SonarHost   = "http://localhost:9000"
 $ProjectKey  = "sonar-samples-dotnet"
 $ProjectName = "sonar-samples / dotnet"
 
-Write-Host "==> SonarScanner for .NET — begin" -ForegroundColor Cyan
+Write-Host "==> dotnet restore" -ForegroundColor Cyan
+dotnet restore
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "`n==> SonarScanner for .NET: begin" -ForegroundColor Cyan
 dotnet sonarscanner begin `
     /k:"$ProjectKey" `
     /n:"$ProjectName" `
@@ -37,7 +41,7 @@ dotnet test --no-build `
     -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "`n==> SonarScanner for .NET — end" -ForegroundColor Cyan
+Write-Host "`n==> SonarScanner for .NET: end" -ForegroundColor Cyan
 dotnet sonarscanner end /d:sonar.token="$Token"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

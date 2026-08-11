@@ -33,26 +33,52 @@ echo ""
 echo "==> Copying sonar-project.properties..."
 cp "${SCRIPT_DIR}/sonar-project.properties" "${APP_DIR}/"
 
-echo ""
-echo "==> Patching angular.json to enable code coverage by default..."
 cd "${APP_DIR}"
 
-# Enable codeCoverage in the test target
-node -e "
-const fs = require('fs');
-const config = JSON.parse(fs.readFileSync('angular.json', 'utf8'));
-const projectName = Object.keys(config.projects)[0];
-const testOptions = config.projects[projectName].architect.test.options;
-testOptions.codeCoverage = true;
-fs.writeFileSync('angular.json', JSON.stringify(config, null, 2));
-console.log('  angular.json updated: codeCoverage = true');
-"
+echo ""
+echo "==> Configuring coverage..."
+
+# Angular <= 19 scaffolds a Karma test target, which takes `codeCoverage` as a builder option in angular.json.
+# Angular >= 20 scaffolds the Vitest-based `@angular/build:unit-test` builder, whose schema *rejects* `codeCoverage`;
+# coverage is a CLI flag there, and the v8 coverage provider is a separate package that `ng new` does not install.
+BUILDER=$(node -p "
+const c = require('./angular.json');
+const p = c.projects[Object.keys(c.projects)[0]];
+const t = (p.architect || p.targets || {}).test;
+t ? t.builder : '';
+")
+echo "  test builder: ${BUILDER:-none}"
+
+case "${BUILDER}" in
+  *karma*)
+    node -e "
+      const fs = require('fs');
+      const config = JSON.parse(fs.readFileSync('angular.json', 'utf8'));
+      const project = config.projects[Object.keys(config.projects)[0]];
+      const targets = project.architect || project.targets;
+      targets.test.options = targets.test.options || {};
+      targets.test.options.codeCoverage = true;
+      fs.writeFileSync('angular.json', JSON.stringify(config, null, 2));
+      console.log('  angular.json updated: codeCoverage = true');
+    "
+    TEST_CMD="ng test --watch=false --browsers=ChromeHeadless"
+    ;;
+  *unit-test*)
+    echo "  installing @vitest/coverage-v8 (required by the Vitest builder)"
+    npm install --save-dev @vitest/coverage-v8
+    TEST_CMD="ng test --watch=false --coverage --coverage-reporters=lcovonly"
+    ;;
+  *)
+    echo "  WARNING: unrecognised test builder, configure coverage manually."
+    TEST_CMD="ng test --watch=false"
+    ;;
+esac
 
 echo ""
 echo "Done. Next steps:"
 echo ""
 echo "  cd ${APP_DIR}"
-echo "  ng test --watch=false --browsers=ChromeHeadless"
-echo "  sonar-scanner -Dsonar.token=<your-token>"
+echo "  ${TEST_CMD}"
+echo "  sonar-scanner -Dsonar.token=<token>"
 echo ""
 echo "See the README for full instructions."

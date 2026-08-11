@@ -1,18 +1,24 @@
 root = true
 
 [*]
-charset = utf-8
 end_of_line = lf
 indent_style = space
-indent_size = 2
 insert_final_newline = true
+
+[*.{js,json,*sh,tf*,yml,yaml}]
+indent_size = 2
+max_line_length = 180
 trim_trailing_whitespace = true
+
+[*.md]
+indent_size = 2
+max_line_length = 240
+trim_trailing_whitespace = false
 
 [*.{cs,java}]
 indent_size = 4
+max_line_length = 180
+trim_trailing_whitespace = true
 
-[*.md]
-trim_trailing_whitespace = false
-
-[Makefile]
-indent_style = tab
+[.env]
+charset = utf-8

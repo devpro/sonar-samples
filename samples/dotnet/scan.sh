@@ -13,7 +13,11 @@ SONAR_HOST="http://localhost:9000"
 PROJECT_KEY="sonar-samples-dotnet"
 PROJECT_NAME="sonar-samples / dotnet"
 
-echo "==> SonarScanner for .NET — begin"
+echo "==> dotnet restore"
+dotnet restore
+
+echo ""
+echo "==> SonarScanner for .NET: begin"
 dotnet sonarscanner begin \
   /k:"${PROJECT_KEY}" \
   /n:"${PROJECT_NAME}" \
@@ -32,7 +36,7 @@ dotnet test --no-build \
   -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
 echo ""
-echo "==> SonarScanner for .NET — end"
+echo "==> SonarScanner for .NET: end"
 dotnet sonarscanner end /d:sonar.token="${TOKEN}"
 
 echo ""

@@ -1,3 +1,5 @@
+using Xunit;
+
 using SonarSamples.Api;
 
 namespace SonarSamples.Api.Tests;

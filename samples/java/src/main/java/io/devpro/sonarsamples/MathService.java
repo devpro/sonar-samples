@@ -2,7 +2,7 @@ package io.devpro.sonarsamples;
 
 /**
  * Simple arithmetic and string utilities.
- * Contains intentional issues for SonarQube to detect.
+ * The deliberate issues live in {@link Showcase}.
  */
 public class MathService {
 
@@ -24,14 +24,10 @@ public class MathService {
         if (name == null || name.isBlank()) {
             name = "world";
         }
-        // Intentional code smell: string concatenation instead of formatted string
         return "Hello, " + name + "!";
     }
 
-    /**
-     * Divides a by b.
-     * Intentional issue: no guard against division by zero — Sonar S3518 will flag this.
-     */
+    /** Divides a by b. */
     public double divide(double a, double b) {
         return a / b;
     }

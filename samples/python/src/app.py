@@ -17,12 +17,6 @@ def add(a: int | float, b: int | float) -> int | float:
     return a + b
 
 
-# Intentional code smell: mutable default argument (Sonar B006 equivalent)
-def append_to(element, target=[]):  # noqa: B006
-    target.append(element)
-    return target
-
-
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})

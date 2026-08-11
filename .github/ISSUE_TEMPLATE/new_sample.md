@@ -7,8 +7,10 @@ labels: enhancement
 **Language / framework**
 
 **Why it would be useful**
+
 <!-- What Sonar feature does it demonstrate that existing samples don't? -->
 
-**Are you willing to contribute it?**
+**Is a contribution planned?**
+
 - [ ] Yes, I can open a PR
 - [ ] No, just a suggestion

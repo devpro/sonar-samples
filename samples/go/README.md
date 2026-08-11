@@ -1,78 +1,42 @@
 # Go sample
 
-A minimal Go 1.23 HTTP server with unit tests, demonstrating Go analysis in SonarQube using the SonarScanner CLI combined with `go test` coverage output.
+A minimal Go 1.23 HTTP server with unit tests, analysed with the SonarScanner CLI.
 
-## What this demonstrates
-
-- Go source analysis (bugs, code smells, security hotspots)
-- Test coverage import from `go test -coverprofile`
-- Exclusion of generated files and vendor directory
-- SonarScanner CLI running against a Go module
+- Project key: `sonar-samples-go`
+- Coverage: `go test -coverprofile` writes `coverage.out`, read natively with no conversion
+- Issues raised: [docs/rules.md#go](../../docs/rules.md#go)
 
 ## Prerequisites
 
-- [Go 1.23+](https://go.dev/dl/)
-- SonarQube running locally (`docker compose up -d` from the repo root)
-- SonarScanner CLI:
+Go 1.23+ and a running SonarQube.
+See [docs/installation.md](../../docs/installation.md).
+
+## Run it
 
 ```bash
-# macOS (Homebrew)
-brew install sonar-scanner
-
-# Linux / Windows — download from:
-# https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/sonarscanner/
-```
-
-Or run the scanner via Docker — see below.
-
-## Run the application
-
-```bash
-go run ./cmd/server
-# Listening on http://localhost:8080
-```
-
-## Run tests with coverage
-
-```bash
+go vet ./...
 go test ./... -coverprofile=coverage.out -covermode=atomic
+go run ./cmd/server   # optional, serves http://localhost:8080
 ```
 
-SonarQube reads Go coverage in the `go test` text format directly — no conversion needed.
-
-## Create the project in SonarQube
-
-1. Open <http://localhost:9000>
-2. Log in (`admin` / your password)
-3. Click **Create project** → **Manually**
-4. Set **Project key**: `sonar-samples-go`
-5. Set **Display name**: `sonar-samples / go`
-6. Click **Set up** → **Locally**
-7. Generate a token and copy it
-
-## Run the scanner
+## Scan it
 
 ```bash
-sonar-scanner -Dsonar.token=<your-token>
+export SONAR_TOKEN=$(task bootstrap)   # see docs/tokens.md
+task scan:go
 ```
 
-### Running the scanner via Docker (no install)
+Or with a locally installed scanner, from this directory:
 
 ```bash
-docker run --rm \
-  --network host \
-  -e SONAR_TOKEN=<your-token> \
-  -v "$(pwd)":/usr/src \
-  sonarsource/sonar-scanner-cli:latest
+sonar-scanner -Dsonar.token="$SONAR_TOKEN"
 ```
 
-## View results
-
-Open <http://localhost:9000/dashboard?id=sonar-samples-go>.
+Results: <http://localhost:9000/dashboard?id=sonar-samples-go>
 
 ## sonar-project.properties
 
-```properties
+```ini
 sonar.projectKey=sonar-samples-go
 sonar.projectName=sonar-samples / go
 sonar.sources=.
@@ -83,6 +47,19 @@ sonar.go.coverage.reportPaths=coverage.out
 sonar.host.url=http://localhost:9000
 ```
 
-> `sonar.sources` and `sonar.tests` both point to `.` — Sonar distinguishes them via the inclusions/exclusions on `*_test.go`.
+Go layout does not separate sources from tests into different directories, so `sonar.sources` and `sonar.tests` both point at `.`, and the split is expressed through inclusions instead: `*_test.go` is excluded from sources and included as tests.
+Getting this wrong makes test files count as production code, which inflates both the line count and the issue count.
 
-The `sonar.token` is not stored here — pass it on the command line or via `SONAR_TOKEN`.
+`vendor/` is excluded because vendored dependencies are not part of the analysed code.
+
+## Why this sample raises the fewest issues
+
+This is the most instructive sample in the repo, and worth reading [docs/rules.md#go](../../docs/rules.md#go) for.
+
+`internal/showcase/showcase.go` contains a hard-coded password and MD5 hashing, the same code that raises a Vulnerability and a Security Hotspot in the Java, Python, and .NET samples.
+In Go it raises **nothing at all**, because the Go analyser ships neither `S2068` nor `S4790`.
+
+A clean dashboard does not always mean clean code.
+Sometimes it means the rule does not exist for that language.
+
+Go also rejects unused local variables at compile time, so the "unused variable" smell that the Node.js sample demonstrates cannot exist in a Go program.

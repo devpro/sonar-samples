@@ -5,9 +5,11 @@ labels: bug
 ---
 
 **Sample affected**
+
 <!-- nodejs / angular / dotnet / python / go / java -->
 
 **Environment**
+
 - OS:
 - Docker version:
 - SonarQube version (from the UI footer):
@@ -23,7 +25,7 @@ labels: bug
 **Actual result**
 <!-- Paste the full error output -->
 
-**sonar-project.properties (redact your token)**
-```properties
+**sonar-project.properties (token redacted)**
+```ini
 
 ```

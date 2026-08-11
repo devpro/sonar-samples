@@ -23,7 +23,6 @@ func Greet(name string) string {
 }
 
 // Divide returns a / b.
-// Intentional issue: missing zero guard — Sonar will flag this.
 func Divide(a, b float64) float64 {
 	return a / b
 }

@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (shell + compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - name: Shellcheck
+        run: shellcheck scripts/*.sh samples/dotnet/scan.sh samples/angular/setup.sh
+
+      - name: Taskfile must parse
+        run: task --list-all
+
+      - name: Validate compose.yaml
+        run: docker compose config --quiet
+
+      - name: The SonarQube image tag must exist
+        # `sonarqube:25-community` was published nowhere; this catches a bad tag here instead of when someone first runs `task up`.
+        run: |
+          image=$(docker compose config --images | grep sonarqube)
+          echo "Resolving ${image}"
+          docker manifest inspect "${image}" > /dev/null
+
+  build-nodejs:
+    name: build (nodejs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+
+      - run: task build:nodejs
+
+  build-python:
+    name: build (python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: task build:python
+
+  build-go:
+    name: build (go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          # no third-party dependencies (so no go.sum to key a cache on)
+          cache: false
+
+      - run: task build:go
+
+  build-java:
+    name: build (java)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: task build:java
+
+  build-dotnet:
+    name: build (dotnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: task build:dotnet
+
+  build-angular:
+    name: build (angular scaffold)
+    runs-on: ubuntu-latest
+    # This sample scaffolds a fresh app with the *latest* Angular CLI, so the job validates against a moving target by design:
+    # when the CLI changes its generated layout, this is what signals that the sample has gone stale
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+
+      - run: npm install -g @angular/cli
+
+      - run: task build:angular
+
+  scan:
+    name: end-to-end scan
+    runs-on: ubuntu-latest
+    needs: [build-nodejs, build-python, build-go, build-java, build-dotnet]
+    timeout-minutes: 30
+    env:
+      SONAR_HOST: http://localhost:9000
+      SONAR_ADMIN_PASSWORD: SonarSamples2026!
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+
+      - name: Raise vm.max_map_count for the embedded Elasticsearch
+        run: sudo sysctl -w vm.max_map_count=524288
+
+      - name: Install the SonarScanner for .NET
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Build every sample
+        run: task build
+
+      - name: Boot SonarQube and generate a token
+        id: sonar
+        run: |
+          token=$(task --silent bootstrap)
+          echo "::add-mask::${token}"
+          echo "token=${token}" >> "$GITHUB_OUTPUT"
+
+      - name: Scan every sample
+        env:
+          SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
+        run: task scan
+
+      - name: Assert every sample landed with coverage
+        env:
+          SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
+        run: task assert
+
+      - name: SonarQube logs on failure
+        if: failure()
+        run: docker compose logs --tail 200 sonarqube
+
+      - name: Tear down
+        if: always()
+        run: task reset
