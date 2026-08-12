@@ -2,10 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches:
+      - main
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,7 +18,7 @@ permissions:
 
 jobs:
   lint:
-    name: lint (shell + compose)
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -34,14 +36,13 @@ jobs:
         run: docker compose config --quiet
 
       - name: The SonarQube image tag must exist
-        # `sonarqube:25-community` was published nowhere; this catches a bad tag here instead of when someone first runs `task up`.
         run: |
           image=$(docker compose config --images | grep sonarqube)
           echo "Resolving ${image}"
           docker manifest inspect "${image}" > /dev/null
 
   build-nodejs:
-    name: build (nodejs)
+    name: Build Node.js
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -55,7 +56,7 @@ jobs:
       - run: task build:nodejs
 
   build-python:
-    name: build (python)
+    name: Build Python
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -69,7 +70,7 @@ jobs:
       - run: task build:python
 
   build-go:
-    name: build (go)
+    name: Build Go
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -86,32 +87,38 @@ jobs:
       - run: task build:go
 
   build-java:
-    name: build (java)
+    name: Build Java
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
       - uses: arduino/setup-task@v2
         with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
+
       - run: task build:java
 
   build-dotnet:
-    name: build (dotnet)
+    name: Build .NET
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
       - uses: arduino/setup-task@v2
         with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '10.0.x' }
+
       - run: task build:dotnet
 
   build-angular:
-    name: build (angular scaffold)
+    name: Build Angular (scaffold)
     runs-on: ubuntu-latest
     # This sample scaffolds a fresh app with the *latest* Angular CLI, so the job validates against a moving target by design:
     # when the CLI changes its generated layout, this is what signals that the sample has gone stale
@@ -129,7 +136,7 @@ jobs:
       - run: task build:angular
 
   scan:
-    name: end-to-end scan
+    name: Scan
     runs-on: ubuntu-latest
     needs: [build-nodejs, build-python, build-go, build-java, build-dotnet]
     timeout-minutes: 30

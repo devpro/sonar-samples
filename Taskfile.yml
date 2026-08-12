@@ -13,7 +13,7 @@ tasks:
       - echo "SonarQube is ready → {{.SONAR_HOST}}  (admin / admin)"
 
   down:
-    desc: Stop containers, keep data
+    desc: Stop containers (keep data)
     cmds:
       - docker compose down
 
