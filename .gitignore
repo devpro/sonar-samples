@@ -18,10 +18,12 @@ __pycache__/
 *.pyc
 .pytest_cache/
 coverage.xml
+test-results.xml
 .coverage
 
 # Go
 coverage.out
+test-report.json
 vendor/
 
 # Java / Maven

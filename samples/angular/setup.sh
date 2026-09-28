@@ -64,9 +64,10 @@ case "${BUILDER}" in
     TEST_CMD="ng test --watch=false --browsers=ChromeHeadless"
     ;;
   *unit-test*)
-    echo "  installing @vitest/coverage-v8 (required by the Vitest builder)"
-    npm install --save-dev @vitest/coverage-v8
-    TEST_CMD="ng test --watch=false --coverage --coverage-reporters=lcovonly"
+    # vitest-sonar-reporter writes the test count in the generic format SonarQube imports for JavaScript and TypeScript
+    echo "  installing @vitest/coverage-v8 and vitest-sonar-reporter"
+    npm install --save-dev @vitest/coverage-v8 vitest-sonar-reporter
+    TEST_CMD="ng test --watch=false --coverage --coverage-reporters=lcovonly --reporters=vitest-sonar-reporter --reporters=default --output-file=test-report.xml"
     ;;
   *)
     echo "  WARNING: unrecognised test builder, configure coverage manually."

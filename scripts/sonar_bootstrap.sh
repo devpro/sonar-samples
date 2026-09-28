@@ -14,6 +14,7 @@ SONAR_HOST="${SONAR_HOST:-http://localhost:9000}"
 # SonarQube rejects passwords shorter than 12 characters.
 SONAR_ADMIN_PASSWORD="${SONAR_ADMIN_PASSWORD:-SonarSamples2026!}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-360}"
+TOKEN_NAME="sonar-samples"
 
 log() { echo "$*" >&2; }
 
@@ -70,9 +71,13 @@ esac
 rm -f "${body}"
 
 log "==> Generating a user token"
+# One token name, revoked before each run, so tokens do not pile up and only the latest one is valid
+curl -s -o /dev/null -u "admin:${SONAR_ADMIN_PASSWORD}" \
+  -X POST "${SONAR_HOST}/api/user_tokens/revoke" \
+  --data-urlencode "name=${TOKEN_NAME}" || true
 token=$(curl -s -u "admin:${SONAR_ADMIN_PASSWORD}" \
   -X POST "${SONAR_HOST}/api/user_tokens/generate" \
-  --data-urlencode "name=ci-$(date +%s)-$$" \
+  --data-urlencode "name=${TOKEN_NAME}" \
   | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
 
 if [ -z "${token}" ]; then

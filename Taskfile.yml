@@ -80,7 +80,7 @@ tasks:
     cmds:
       - python3 -m venv .venv
       - ./.venv/bin/pip install --quiet -r requirements.txt
-      - ./.venv/bin/pytest tests/ --cov=src --cov-report=xml:coverage.xml --cov-report=term
+      - ./.venv/bin/pytest tests/ --cov=src --cov-report=xml:coverage.xml --cov-report=term --junitxml=test-results.xml
       - test -s coverage.xml
       # coverage.py writes an absolute <source> path unless relative_files is set, which makes SonarQube silently drop every coverage measure
       - grep -q '<source>src</source>' coverage.xml
@@ -91,7 +91,7 @@ tasks:
     cmds:
       - go vet ./...
       - go build ./...
-      - go test ./... -coverprofile=coverage.out -covermode=atomic
+      - go test ./... -coverprofile=coverage.out -covermode=atomic -json > test-report.json
       - test -s coverage.out
 
   build:java:
@@ -121,8 +121,11 @@ tasks:
     cmds:
       - ./setup.sh
       - cd my-angular-app && npx ng build
-      - cd my-angular-app && npx ng test --watch=false --coverage --coverage-reporters=lcovonly
+      - >-
+        cd my-angular-app && npx ng test --watch=false --coverage --coverage-reporters=lcovonly
+        --reporters=vitest-sonar-reporter --reporters=default --output-file=test-report.xml
       - test -n "$(find my-angular-app/coverage -name lcov.info -size +0)"
+      - test -s my-angular-app/test-report.xml
 
   scan:
     desc: Scan every sample (requires SONAR_TOKEN)
@@ -151,6 +154,12 @@ tasks:
       - task: _scanner-cli
         vars: { DIR: samples/go }
 
+  scan:angular:
+    desc: Scan the Angular sample (requires SONAR_TOKEN)
+    cmds:
+      - task: _scanner-cli
+        vars: { DIR: samples/angular/my-angular-app }
+
   scan:java:
     desc: Scan the Java sample (requires SONAR_TOKEN)
     dir: samples/java
@@ -178,7 +187,7 @@ tasks:
 
   assert:
     desc: Assert every sample was analysed, with coverage, issues and the documented rules (requires SONAR_TOKEN)
-    # Floors sit just below the values measured in docs/rules.md, so normal analyser drift is tolerated but a sample going quiet is not
+    # Floors sit just below the values in docs/rules.md, so analyser drift passes but a sample going quiet fails
     # The rule list is what keeps docs/rules.md honest
     cmds:
       - >-
@@ -197,11 +206,19 @@ tasks:
         ./scripts/assert_analysis.sh sonar-samples-dotnet 30 10
         csharpsquid:S1066,csharpsquid:S1135,csharpsquid:S1192,csharpsquid:S2068,csharpsquid:S2325,csharpsquid:S3776,csharpsquid:S4790
 
+  assert:angular:
+    desc: Assert the Angular sample was analysed, with coverage and tests (requires SONAR_TOKEN)
+    # No rule list or issue floor, since the generated app changes with every Angular CLI release
+    cmds:
+      - ./scripts/assert_analysis.sh sonar-samples-angular 1 0
+
   ci:
     desc: "Full local pipeline: build everything, scan it, assert the results"
     cmds:
       - task: build
       - |
-        export SONAR_TOKEN=$(./scripts/sonar_bootstrap.sh)
+        # A separate assignment, since `export X=$(...)` returns 0 even when the bootstrap fails
+        SONAR_TOKEN=$(./scripts/sonar_bootstrap.sh) || exit 1
+        export SONAR_TOKEN
         task scan
         task assert

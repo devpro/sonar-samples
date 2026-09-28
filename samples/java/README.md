@@ -1,43 +1,18 @@
 # Java sample
 
-A minimal Java 21 Maven project with JUnit 5 tests, analysed with the **SonarScanner for Maven**, the idiomatic choice for Maven builds.
+Java 21 with Maven and JUnit 5, scanned by the SonarScanner for Maven, nothing to install.
 
 - Project key: `sonar-samples-java`
-- Coverage: JaCoCo XML, written to `target/site/jacoco/jacoco.xml`
-- Issues raised: [docs/rules.md#java](../../docs/rules.md#java)
-
-## Prerequisites
-
-JDK 21+ and Maven 3.9+, and a running SonarQube.
-See [docs/installation.md](../../docs/installation.md).
-
-No scanner to install, it is declared as a plugin in `pom.xml`.
-
-## Run it
+- Coverage: JaCoCo XML, `target/site/jacoco/jacoco.xml`
+- Tests: Surefire reports, read by the Maven plugin with no setting
+- Rules raised: [docs/rules.md](../../docs/rules.md)
 
 ```bash
-mvn -B verify
+task build:java   # mvn -B verify
+task scan:java    # mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
 ```
 
-Use `verify`, not `test`.
-The JaCoCo `report` goal is bound to the `verify` phase, so `mvn test` runs the tests but never writes `jacoco.xml`, and the scan then reports no coverage.
-
-## Scan it
-
-```bash
-export SONAR_TOKEN=$(task bootstrap)   # see docs/tokens.md
-task scan:java
-```
-
-which is exactly:
-
-```bash
-mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
-```
-
-Results: <http://localhost:9000/dashboard?id=sonar-samples-java>
-
-## Key configuration in pom.xml
+## pom.xml
 
 ```xml
 <properties>
@@ -50,27 +25,20 @@ Results: <http://localhost:9000/dashboard?id=sonar-samples-java>
 </properties>
 ```
 
-The JaCoCo plugin needs two executions: `prepare-agent` before the tests to instrument them, and `report` after them to write the XML.
-Both are in `pom.xml`.
+The JaCoCo plugin needs both executions: `prepare-agent` before the tests, `report` after them.
 
-`sonar.token` is never stored here, pass it via `-Dsonar.token=` or `SONAR_TOKEN`.
+## Gotchas
 
-## Maven plugin vs the generic CLI
+- `mvn test` is not enough: the JaCoCo `report` goal is bound to `verify`.
+- The Maven plugin analyses bytecode, which many Java rules need, so it is preferred over the generic CLI.
+- Without Maven on the `PATH`, the build and scan run in a container:
 
-For Maven projects, always prefer the plugin:
-
-&nbsp;                | Maven plugin                    | CLI scanner
-----------------------|---------------------------------|-----------------------------
-Install               | none, declared in `pom.xml`     | separate download
-What it analyses      | compiled bytecode **and** source | source only
-Accuracy              | higher                          | lower
-Coverage              | reads JaCoCo automatically      | manual path configuration
-Dependencies          | resolved from the reactor       | invisible
-
-Analysing bytecode is what lets the Java analyser resolve types across dependencies, which many rules need to fire at all.
-
-## A note on the empty catch block
-
-`Showcase.java` swallows a `NoSuchAlgorithmException`.
-That is a genuine smell, but it raises **neither** `S2486` nor `S108`: both rules suppress when the block contains a comment.
-It is left that way deliberately, see [docs/rules.md#java](../../docs/rules.md#java).
+  ```bash
+  docker run --rm --network host --user "$(id -u):$(id -g)" \
+    -v "$(pwd)":/app -w /app \
+    -v "$HOME/.m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
+    -v /tmp/sonarhome:/sonarhome \
+    maven:3.9-eclipse-temurin-21 \
+    mvn -B -Duser.home=/var/maven verify sonar:sonar \
+      -Dsonar.token="$SONAR_TOKEN" -Dsonar.userHome=/sonarhome
+  ```

@@ -23,7 +23,8 @@ dotnet sonarscanner begin \
   /n:"${PROJECT_NAME}" \
   /d:sonar.host.url="${SONAR_HOST}" \
   /d:sonar.token="${TOKEN}" \
-  /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+  /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+  /d:sonar.cs.vstest.reportsPaths="**/*.trx"
 
 echo ""
 echo "==> dotnet build"
@@ -31,7 +32,7 @@ dotnet build --no-restore
 
 echo ""
 echo "==> dotnet test (with coverage)"
-dotnet test --no-build \
+dotnet test --no-build --logger trx \
   --collect:"XPlat Code Coverage" \
   -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 

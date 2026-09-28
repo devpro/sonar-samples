@@ -17,6 +17,10 @@ permissions:
   contents: read
 
 jobs:
+  markup-lint:
+    name: Markup
+    uses: devpro/github-workflow-parts/.github/workflows/reusable-markup-lint.yml@58dbfe0e9927f2191796ac616a4bb43126e59d98
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -117,24 +121,6 @@ jobs:
 
       - run: task build:dotnet
 
-  build-angular:
-    name: Build Angular (scaffold)
-    runs-on: ubuntu-latest
-    # This sample scaffolds a fresh app with the *latest* Angular CLI, so the job validates against a moving target by design:
-    # when the CLI changes its generated layout, this is what signals that the sample has gone stale
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: arduino/setup-task@v2
-        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
-
-      - uses: actions/setup-node@v6
-        with: { node-version: 22 }
-
-      - run: npm install -g @angular/cli
-
-      - run: task build:angular
-
   scan:
     name: Scan
     runs-on: ubuntu-latest
@@ -177,8 +163,13 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
+      - name: Install the Angular CLI
+        run: npm install -g @angular/cli
+
       - name: Build every sample
-        run: task build
+        run: |
+          task build
+          task build:angular
 
       - name: Boot SonarQube and generate a token
         id: sonar
@@ -190,12 +181,16 @@ jobs:
       - name: Scan every sample
         env:
           SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
-        run: task scan
+        run: |
+          task scan
+          task scan:angular
 
       - name: Assert every sample landed with coverage
         env:
           SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
-        run: task assert
+        run: |
+          task assert
+          task assert:angular
 
       - name: SonarQube logs on failure
         if: failure()
