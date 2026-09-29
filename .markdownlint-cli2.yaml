@@ -2,6 +2,7 @@ gitignore: true
 ignores:
   - "**/node_modules/**"
   - "CLAUDE.md"
+  - ".github/ISSUE_TEMPLATE/**"
 config:
   default: true
   MD013:
