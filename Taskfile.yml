@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 vars:
   SONAR_HOST: http://localhost:9000
