@@ -3,10 +3,12 @@ extends: default
 ignore-from-file:
   - .gitignore
 rules:
+  braces:
+    max-spaces-inside: 1
+  brackets:
+    max-spaces-inside: 1
   document-start: disable
   line-length:
     level: warning
     max: 180
   truthy: disable
-  brackets:
-    max-spaces-inside: 1

@@ -6,7 +6,7 @@ labels: bug
 
 **Sample affected**
 
-<!-- nodejs / angular / dotnet / python / go / java -->
+<!-- angular / dotnet / go / java / nodejs / python -->
 
 **Environment**
 
@@ -16,6 +16,7 @@ labels: bug
 - Language runtime version:
 
 **Steps to reproduce**
+
 1.
 2.
 3.
@@ -23,9 +24,11 @@ labels: bug
 **Expected result**
 
 **Actual result**
+
 <!-- Paste the full error output -->
 
 **sonar-project.properties (token redacted)**
+
 ```ini
 
 ```

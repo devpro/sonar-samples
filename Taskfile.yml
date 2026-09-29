@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 vars:
   SONAR_HOST: http://localhost:9000
@@ -178,9 +178,12 @@ tasks:
       - |
         [ -n "$SONAR_TOKEN" ] || { echo "SONAR_TOKEN is not set. Run: export SONAR_TOKEN=\$(task bootstrap)"; exit 1; }
         # --network host: reach SonarQube on localhost:9000 (Linux/Docker).
-        # --user: the image runs as root by default and would leave a root-owned .scannerwork/ in the working tree, which then breaks the next build with "permission denied".
+        # --user: anything written into the mounted sample must belong to the host user, or the next build fails with "permission denied".
+        # SONAR_USER_HOME and SCANNER_WORKDIR_PATH: the image's own cache and work directories belong to uid 1000, so any other uid (1001 on GitHub runners) cannot write to them.
         docker run --rm --network host \
           --user "$(id -u):$(id -g)" \
+          -e SONAR_USER_HOME=/tmp/.sonar \
+          -e SCANNER_WORKDIR_PATH=/tmp/scannerwork \
           -e SONAR_TOKEN="$SONAR_TOKEN" \
           -v "$(pwd)/{{.DIR}}":/usr/src \
           sonarsource/sonar-scanner-cli:latest
