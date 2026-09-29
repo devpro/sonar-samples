@@ -1,0 +1,37 @@
+name: Setup Task
+description: |
+  Installs Task from its official GitHub release after verifying the SHA256 checksum.
+  Replaces arduino/setup-task, to keep third-party actions out of the supply chain.
+  Linux runners only (for example ubuntu-latest).
+
+inputs:
+  task-version:
+    description: Version of Task to install, from https://github.com/go-task/task/releases
+    required: false
+    default: "v3.53.1"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Task
+      shell: bash
+      env:
+        TASK_VERSION: ${{ inputs.task-version }}
+        TASK_TGZ: task_linux_amd64.tar.gz
+      run: |
+        base_url="https://github.com/go-task/task/releases/download/${TASK_VERSION}"
+        workdir=$(mktemp -d)
+        cd "${workdir}"
+
+        curl -fsSL -O "${base_url}/${TASK_TGZ}"
+        curl -fsSL -O "${base_url}/task_checksums.txt"
+
+        if ! grep " ${TASK_TGZ}$" task_checksums.txt | sha256sum --check --status; then
+          echo "ERROR: checksum verification failed for ${TASK_TGZ}" >&2
+          exit 1
+        fi
+
+        tar -xzf "${TASK_TGZ}" task
+        sudo install -m 0755 task /usr/local/bin/task
+        rm -rf "${workdir}"
+        task --version
