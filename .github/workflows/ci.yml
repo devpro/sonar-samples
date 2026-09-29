@@ -1,0 +1,201 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  markup-lint:
+    name: Markup
+    uses: devpro/github-workflow-parts/.github/workflows/reusable-markup-lint.yml@58dbfe0e9927f2191796ac616a4bb43126e59d98
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - name: Shellcheck
+        run: shellcheck scripts/*.sh samples/dotnet/scan.sh samples/angular/setup.sh
+
+      - name: Taskfile must parse
+        run: task --list-all
+
+      - name: Validate compose.yaml
+        run: docker compose config --quiet
+
+      - name: The SonarQube image tag must exist
+        run: |
+          image=$(docker compose config --images | grep sonarqube)
+          echo "Resolving ${image}"
+          docker manifest inspect "${image}" > /dev/null
+
+  build-nodejs:
+    name: Build Node.js
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+
+      - run: task build:nodejs
+
+  build-python:
+    name: Build Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: task build:python
+
+  build-go:
+    name: Build Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          # no third-party dependencies (so no go.sum to key a cache on)
+          cache: false
+
+      - run: task build:go
+
+  build-java:
+    name: Build Java
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - run: task build:java
+
+  build-dotnet:
+    name: Build .NET
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+
+      - run: task build:dotnet
+
+  scan:
+    name: Scan
+    runs-on: ubuntu-latest
+    needs: [build-nodejs, build-python, build-go, build-java, build-dotnet]
+    timeout-minutes: 30
+    env:
+      SONAR_HOST: http://localhost:9000
+      SONAR_ADMIN_PASSWORD: SonarSamples2026!
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: arduino/setup-task@v2
+        with: { repo-token: '${{ secrets.GITHUB_TOKEN }}' }
+
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+
+      - name: Raise vm.max_map_count for the embedded Elasticsearch
+        run: sudo sysctl -w vm.max_map_count=524288
+
+      - name: Install the SonarScanner for .NET
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Install the Angular CLI
+        run: npm install -g @angular/cli
+
+      - name: Build every sample
+        run: |
+          task build
+          task build:angular
+
+      - name: Boot SonarQube and generate a token
+        id: sonar
+        run: |
+          token=$(task --silent bootstrap)
+          echo "::add-mask::${token}"
+          echo "token=${token}" >> "$GITHUB_OUTPUT"
+
+      - name: Scan every sample
+        env:
+          SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
+        run: |
+          task scan
+          task scan:angular
+
+      - name: Assert every sample landed with coverage
+        env:
+          SONAR_TOKEN: ${{ steps.sonar.outputs.token }}
+        run: |
+          task assert
+          task assert:angular
+
+      - name: SonarQube logs on failure
+        if: failure()
+        run: docker compose logs --tail 200 sonarqube
+
+      - name: Tear down
+        if: always()
+        run: task reset

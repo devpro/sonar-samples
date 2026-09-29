@@ -1,0 +1,21 @@
+{
+  "name": "sonar-samples-nodejs",
+  "version": "1.0.0",
+  "description": "Minimal Node.js app for SonarQube analysis sample",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-sonar": "^0.2.16"
+  },
+  "jest": {
+    "collectCoverageFrom": ["src/**/*.js"],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["lcov", "text"],
+    "reporters": ["default", ["jest-sonar", { "outputDirectory": "coverage", "outputName": "test-report.xml" }]],
+    "testMatch": ["**/tests/**/*.test.js"]
+  }
+}

@@ -1,0 +1,8 @@
+gitignore: true
+ignores:
+  - "**/node_modules/**"
+  - "CLAUDE.md"
+config:
+  default: true
+  MD013:
+    line_length: 240

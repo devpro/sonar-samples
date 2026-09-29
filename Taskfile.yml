@@ -1,0 +1,224 @@
+version: '3'
+
+vars:
+  SONAR_HOST: http://localhost:9000
+
+tasks:
+  up:
+    desc: Start SonarQube and wait until ready
+    cmds:
+      - docker compose up -d
+      - task: wait
+      - echo ""
+      - echo "SonarQube is ready → {{.SONAR_HOST}}  (admin / admin)"
+
+  down:
+    desc: Stop containers (keep data)
+    cmds:
+      - docker compose down
+
+  reset:
+    desc: Stop containers and wipe all data (clean slate)
+    cmds:
+      - docker compose down -v
+      - echo "All SonarQube data removed."
+
+  status:
+    desc: Show container status
+    cmds:
+      - docker compose ps
+
+  logs:
+    desc: Tail SonarQube logs
+    cmds:
+      - docker compose logs -f sonarqube
+
+  wait:
+    desc: Wait until SonarQube reports UP (used internally by 'up')
+    internal: true
+    silent: true
+    cmds:
+      - |
+        echo "Waiting for SonarQube to be ready..."
+        for i in $(seq 1 60); do
+          STATUS=$(curl -sf {{.SONAR_HOST}}/api/system/status 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+          if [ "$STATUS" = "UP" ]; then
+            echo "Status: UP"
+            exit 0
+          fi
+          echo "  [$i/60] Status: ${STATUS:-waiting}..."
+          sleep 5
+        done
+        echo "SonarQube did not become ready in time. Check: task logs"
+        exit 1
+
+  bootstrap:
+    desc: Start SonarQube and print a fresh user token on stdout
+    cmds:
+      - ./scripts/sonar_bootstrap.sh
+
+  build:
+    desc: Build and test every sample
+    cmds:
+      - task: build:nodejs
+      - task: build:python
+      - task: build:go
+      - task: build:java
+      - task: build:dotnet
+
+  build:nodejs:
+    desc: Build and test the Node.js sample
+    dir: samples/nodejs
+    cmds:
+      - npm install
+      - npm test
+      - test -s coverage/lcov.info
+
+  build:python:
+    desc: Build and test the Python sample
+    dir: samples/python
+    cmds:
+      - python3 -m venv .venv
+      - ./.venv/bin/pip install --quiet -r requirements.txt
+      - ./.venv/bin/pytest tests/ --cov=src --cov-report=xml:coverage.xml --cov-report=term --junitxml=test-results.xml
+      - test -s coverage.xml
+      # coverage.py writes an absolute <source> path unless relative_files is set, which makes SonarQube silently drop every coverage measure
+      - grep -q '<source>src</source>' coverage.xml
+
+  build:go:
+    desc: Build and test the Go sample
+    dir: samples/go
+    cmds:
+      - go vet ./...
+      - go build ./...
+      - go test ./... -coverprofile=coverage.out -covermode=atomic -json > test-report.json
+      - test -s coverage.out
+
+  build:java:
+    desc: Build and test the Java sample
+    dir: samples/java
+    cmds:
+      - mvn -B verify
+      - test -s target/site/jacoco/jacoco.xml
+
+  build:dotnet:
+    desc: Build and test the .NET sample
+    dir: samples/dotnet
+    cmds:
+      - dotnet restore
+      - dotnet build --no-restore
+      # Every `dotnet test` run writes TestResults/<new-guid>/coverage.opencover.xml, and the scanner glob matches all of them.
+      # Stale reports from earlier runs would be merged in, so local coverage drifts upward until they are cleared.
+      - rm -rf tests/*/TestResults
+      - >-
+        dotnet test --no-build --collect:"XPlat Code Coverage"
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+      - test -n "$(find . -name coverage.opencover.xml -size +0)"
+
+  build:angular:
+    desc: Scaffold the Angular app, then build and test it with coverage
+    dir: samples/angular
+    cmds:
+      - ./setup.sh
+      - cd my-angular-app && npx ng build
+      - >-
+        cd my-angular-app && npx ng test --watch=false --coverage --coverage-reporters=lcovonly
+        --reporters=vitest-sonar-reporter --reporters=default --output-file=test-report.xml
+      - test -n "$(find my-angular-app/coverage -name lcov.info -size +0)"
+      - test -s my-angular-app/test-report.xml
+
+  scan:
+    desc: Scan every sample (requires SONAR_TOKEN)
+    cmds:
+      - task: scan:nodejs
+      - task: scan:python
+      - task: scan:go
+      - task: scan:java
+      - task: scan:dotnet
+
+  scan:nodejs:
+    desc: Scan the Node.js sample (requires SONAR_TOKEN)
+    cmds:
+      - task: _scanner-cli
+        vars: { DIR: samples/nodejs }
+
+  scan:python:
+    desc: Scan the Python sample (requires SONAR_TOKEN)
+    cmds:
+      - task: _scanner-cli
+        vars: { DIR: samples/python }
+
+  scan:go:
+    desc: Scan the Go sample (requires SONAR_TOKEN)
+    cmds:
+      - task: _scanner-cli
+        vars: { DIR: samples/go }
+
+  scan:angular:
+    desc: Scan the Angular sample (requires SONAR_TOKEN)
+    cmds:
+      - task: _scanner-cli
+        vars: { DIR: samples/angular/my-angular-app }
+
+  scan:java:
+    desc: Scan the Java sample (requires SONAR_TOKEN)
+    dir: samples/java
+    cmds:
+      - mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
+
+  scan:dotnet:
+    desc: Scan the .NET sample (requires SONAR_TOKEN)
+    dir: samples/dotnet
+    cmds:
+      - ./scan.sh "$SONAR_TOKEN"
+
+  _scanner-cli:
+    internal: true
+    cmds:
+      - |
+        [ -n "$SONAR_TOKEN" ] || { echo "SONAR_TOKEN is not set. Run: export SONAR_TOKEN=\$(task bootstrap)"; exit 1; }
+        # --network host: reach SonarQube on localhost:9000 (Linux/Docker).
+        # --user: the image runs as root by default and would leave a root-owned .scannerwork/ in the working tree, which then breaks the next build with "permission denied".
+        docker run --rm --network host \
+          --user "$(id -u):$(id -g)" \
+          -e SONAR_TOKEN="$SONAR_TOKEN" \
+          -v "$(pwd)/{{.DIR}}":/usr/src \
+          sonarsource/sonar-scanner-cli:latest
+
+  assert:
+    desc: Assert every sample was analysed, with coverage, issues and the documented rules (requires SONAR_TOKEN)
+    # Floors sit just below the values in docs/results.md, so analyser drift passes but a sample going quiet fails
+    # The rule list is what keeps docs/results.md honest
+    cmds:
+      - >-
+        ./scripts/assert_analysis.sh sonar-samples-nodejs 25 5
+        javascript:S1135,javascript:S1481,javascript:S2068,javascript:S3516,javascript:S3776,javascript:S4790
+      - >-
+        ./scripts/assert_analysis.sh sonar-samples-python 55 5
+        python:S1066,python:S1135,python:S2068,python:S3516,python:S3776,python:S5717,python:S4502,python:S4790
+      - >-
+        ./scripts/assert_analysis.sh sonar-samples-go 25 3
+        go:S1135,go:S1192,go:S3776
+      - >-
+        ./scripts/assert_analysis.sh sonar-samples-java 30 5
+        java:S1066,java:S1135,java:S1192,java:S2068,java:S3776,java:S4790
+      - >-
+        ./scripts/assert_analysis.sh sonar-samples-dotnet 30 10
+        csharpsquid:S1066,csharpsquid:S1135,csharpsquid:S1192,csharpsquid:S2068,csharpsquid:S2325,csharpsquid:S3776,csharpsquid:S4790
+
+  assert:angular:
+    desc: Assert the Angular sample was analysed, with coverage and tests (requires SONAR_TOKEN)
+    # No rule list or issue floor, since the generated app changes with every Angular CLI release
+    cmds:
+      - ./scripts/assert_analysis.sh sonar-samples-angular 1 0
+
+  ci:
+    desc: "Full local pipeline: build everything, scan it, assert the results"
+    cmds:
+      - task: build
+      - |
+        # A separate assignment, since `export X=$(...)` returns 0 even when the bootstrap fails
+        SONAR_TOKEN=$(./scripts/sonar_bootstrap.sh) || exit 1
+        export SONAR_TOKEN
+        task scan
+        task assert

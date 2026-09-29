@@ -1,15 +1,24 @@
 root = true
 
 [*]
-indent_style = space
-charset = utf-8-bom
-trim_trailing_whitespace = true
-insert_final_newline = true
 end_of_line = lf
+indent_style = space
+insert_final_newline = true
 
-[*.cs]
-indent_size = 4
-dotnet_sort_system_directives_first = true
-
-[*.{xml,config,csproj,nuspec,props,resx,targets,yml,tasks,json,md,ts,cshtml}]
+[*.{js,json,*sh,tf*,yml,yaml}]
 indent_size = 2
+max_line_length = 180
+trim_trailing_whitespace = true
+
+[*.md]
+indent_size = 2
+max_line_length = 240
+trim_trailing_whitespace = false
+
+[*.{cs,java}]
+indent_size = 4
+max_line_length = 180
+trim_trailing_whitespace = true
+
+[.env]
+charset = utf-8
