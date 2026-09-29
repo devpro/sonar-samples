@@ -1,15 +1,12 @@
 # Go sample
 
-Go 1.23 HTTP server with unit tests, scanned by the SonarScanner CLI.
+Scan a Go 1.23 HTTP server with unit tests with the SonarScanner CLI.
 
-- Project key: `sonar-samples-go`
-- Coverage: Go cover profile, `coverage.out`
-- Tests: `go test -json` output, `test-report.json`
-- Rules raised: [docs/rules.md](../../docs/rules.md)
+## How to run
 
 ```bash
-task build:go   # go vet, go test with coverage
-task scan:go    # scanner CLI in Docker
+task build:go   # vet and build, then run the tests with coverage
+task scan:go    # run the scanner CLI in Docker
 ```
 
 Without Task, from this directory:
@@ -19,7 +16,7 @@ go test ./... -coverprofile=coverage.out -covermode=atomic -json > test-report.j
 sonar-scanner -Dsonar.token="$SONAR_TOKEN"
 ```
 
-## sonar-project.properties
+## Settings
 
 ```ini
 sonar.projectKey=sonar-samples-go
@@ -35,5 +32,6 @@ sonar.go.tests.reportPaths=test-report.json
 
 ## Gotchas
 
-- Sources and tests share a directory, so `*_test.go` is excluded from sources and included as tests, otherwise tests count as production code.
-- The Go analyser has no `S2068` and no `S4790`: the hard-coded password and the MD5 hash in `internal/showcase` raise nothing.
+- In Go, the tests live next to the code they test.
+  The `*_test.go` files are therefore excluded from the sources and included as tests, otherwise they would be counted as production code.
+- The Go analyser has neither `S2068` nor `S4790`, so the hard-coded password and the MD5 hash in `internal/showcase` raise nothing.

@@ -1,31 +1,22 @@
 # Sonar Samples
 
-Small code samples in six languages, analysed by a local SonarQube running in Docker.
+[![CI](https://github.com/devpro/sonar-samples/actions/workflows/ci.yml/badge.svg)](https://github.com/devpro/sonar-samples/actions/workflows/ci.yml)
 
-## Getting started
-
-```bash
-sudo sysctl -w vm.max_map_count=524288   # once per boot
-export SONAR_TOKEN=$(task bootstrap)     # starts SonarQube, prints a token
-task build:nodejs && task scan:nodejs
-```
-
-Results are on [http://localhost:9000](http://localhost:9000) (log in as `admin` / `SonarSamples2026!`).
+Small code samples in six languages with the instructions to analyze them with a local SonarQube, running in a container.
 
 ## Samples
 
-- [angular](samples/angular/)
-- [dotnet](samples/dotnet/)
-- [go](samples/go/)
-- [java](samples/java/)
-- [nodejs](samples/nodejs/)
-- [python](samples/python/)
+- [Angular](samples/angular/)
+- [.NET](samples/dotnet/)
+- [Go](samples/go/)
+- [Java](samples/java/)
+- [NodeJS](samples/nodejs/)
+- [Python](samples/python/)
 
 ## Going further
 
-- [Quickstart](docs/quickstart.md)
+- [Authentication](docs/authentication.md)
 - [Installation](docs/installation.md)
-- [Troubleshooting](docs/sonarqube-tips.md)
-- [Tokens](docs/tokens.md)
-- [Rules raised](docs/rules.md)
-- [Remote server](docs/remote-sonarqube.md).
+- [Quickstart](docs/quickstart.md)
+- [Results](docs/results.md)
+- [Troubleshooting](docs/troubleshooting.md)

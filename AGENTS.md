@@ -40,6 +40,6 @@ Applies to Markdown, code comments, commit messages and prose in scripts.
 
 A rule is never claimed to fire without seeing it in the issue list or the hotspot list, see `CONTRIBUTING.md`.
 `task ci` builds, scans and asserts everything.
-`docs/rules.md` and the `assert` floors in `Taskfile.yml` change together.
+`docs/results` and the `assert` floors in `Taskfile.yml` change together.
 
 Without Maven on the `PATH`, the Java sample builds in a container, see `samples/java/README.md`.

@@ -1,20 +1,23 @@
 # Node.js sample
 
-Node.js 22 with Jest, scanned by the SonarScanner CLI.
+Scan a Node.js 22 sample with Jest with the SonarScanner CLI.
 
-- Project key: `sonar-samples-nodejs`
-- Coverage: LCOV, `coverage/lcov.info`
-- Tests: `jest-sonar`, `coverage/test-report.xml`
-- Rules raised: [docs/rules.md](../../docs/rules.md)
+## How to run
 
 ```bash
-task build:nodejs   # npm install && npm test
-task scan:nodejs    # scanner CLI in Docker
+task build:nodejs   # install the dependencies, run the tests with coverage
+task scan:nodejs    # run the scanner CLI in Docker
 ```
 
-Without Task, from this directory: `npm install && npm test`, then `npx sonar-scanner -Dsonar.token="$SONAR_TOKEN"`.
+Without Task, from this directory:
 
-## sonar-project.properties
+```bash
+npm install
+npm test
+npx sonar-scanner -Dsonar.token="$SONAR_TOKEN"
+```
+
+## Settings
 
 ```ini
 sonar.projectKey=sonar-samples-nodejs
@@ -29,6 +32,8 @@ sonar.testExecutionReportPaths=coverage/test-report.xml
 
 ## Gotchas
 
-- `sonar.javascript.lcov.reportPaths` must match Jest's output, otherwise coverage is 0% and the scan still succeeds.
-- Jest only reports files a test imports, `"collectCoverageFrom": ["src/**/*.js"]` in `package.json` adds the others.
-- TypeScript uses the same `sonar.javascript.` property, the `sonar.typescript.` one is ignored.
+- `sonar.javascript.lcov.reportPaths` must match the path Jest writes to, otherwise coverage is 0% and the scan still succeeds.
+- Jest only reports the files imported by a test.
+  `"collectCoverageFrom": ["src/**/*.js"]` in `package.json` makes it report the other files too.
+- TypeScript uses the same `sonar.javascript.` property, and the `sonar.typescript.` one is ignored.
+- The test report is written by `jest-sonar`, which is declared as a Jest reporter in `package.json`.

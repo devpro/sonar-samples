@@ -1,6 +1,5 @@
 services:
   sonarqube:
-    # Pinned, since the rule counts in docs/rules.md depend on the version, and there is no major-only Community tag
     image: sonarqube:26.6.0.123539-community
     depends_on:
       postgres:

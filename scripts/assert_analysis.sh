@@ -3,7 +3,7 @@
 # Asserts that a sample was analysed, that its coverage and test reports were imported, and that the rules it demonstrates still fire.
 #
 # A scanner exits 0 even when it cannot import the coverage report, so the exit code proves nothing.
-# The rule check catches a rule retired in a SonarQube release, which would otherwise leave docs/rules.md quietly wrong.
+# The rule check catches a rule retired in a SonarQube release, which would otherwise leave docs/results.md quietly wrong.
 #
 # Usage: SONAR_TOKEN=<token> ./scripts/assert_analysis.sh <projectKey> [minCoverage] [minIssues] [rule,rule,...]
 #
@@ -77,7 +77,7 @@ if [ -n "${REQUIRED_RULES}" ]; then
   IFS=',' read -r -a required <<< "${REQUIRED_RULES}"
   echo "    $(printf '%s\n' "${fired}" | grep -c .) distinct rules fired, ${#required[@]} required"
   for rule in "${required[@]}"; do
-    grep -qxF "${rule}" <<< "${fired}" || errors+=("${rule} no longer fires, re-verify and update docs/rules.md")
+    grep -qxF "${rule}" <<< "${fired}" || errors+=("${rule} no longer fires, re-verify and update docs/results.md")
   done
 fi
 

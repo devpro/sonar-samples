@@ -1,18 +1,36 @@
 # Java sample
 
-Java 21 with Maven and JUnit 5, scanned by the SonarScanner for Maven, nothing to install.
+Scan a Java 21 sample with Maven and JUnit 5 with the SonarScanner for Maven.
+The scanner is a Maven plugin, so there is nothing else to install.
 
-- Project key: `sonar-samples-java`
-- Coverage: JaCoCo XML, `target/site/jacoco/jacoco.xml`
-- Tests: Surefire reports, read by the Maven plugin with no setting
-- Rules raised: [docs/rules.md](../../docs/rules.md)
+## How to run
 
 ```bash
-task build:java   # mvn -B verify
-task scan:java    # mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
+task build:java   # build and test with coverage
+task scan:java    # build again and run the analysis
 ```
 
-## pom.xml
+Without Task, from this directory:
+
+```bash
+mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
+```
+
+Without Maven installed, the same command runs in a container:
+
+```bash
+docker run --rm --network host --user "$(id -u):$(id -g)" \
+  -v "$(pwd)":/app -w /app \
+  -v "$HOME/.m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
+  -v /tmp/sonarhome:/sonarhome \
+  maven:3.9-eclipse-temurin-21 \
+  mvn -B -Duser.home=/var/maven verify sonar:sonar \
+    -Dsonar.token="$SONAR_TOKEN" -Dsonar.userHome=/sonarhome
+```
+
+## Settings
+
+The settings are Maven properties in `pom.xml`:
 
 ```xml
 <properties>
@@ -25,20 +43,10 @@ task scan:java    # mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
 </properties>
 ```
 
-The JaCoCo plugin needs both executions: `prepare-agent` before the tests, `report` after them.
+The JaCoCo plugin needs two executions: `prepare-agent` before the tests, and `report` after them.
+The test reports written by Surefire are found by the scanner without any setting.
 
 ## Gotchas
 
-- `mvn test` is not enough: the JaCoCo `report` goal is bound to `verify`.
-- The Maven plugin analyses bytecode, which many Java rules need, so it is preferred over the generic CLI.
-- Without Maven on the `PATH`, the build and scan run in a container:
-
-  ```bash
-  docker run --rm --network host --user "$(id -u):$(id -g)" \
-    -v "$(pwd)":/app -w /app \
-    -v "$HOME/.m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
-    -v /tmp/sonarhome:/sonarhome \
-    maven:3.9-eclipse-temurin-21 \
-    mvn -B -Duser.home=/var/maven verify sonar:sonar \
-      -Dsonar.token="$SONAR_TOKEN" -Dsonar.userHome=/sonarhome
-  ```
+- `mvn test` produces no coverage report, because the JaCoCo `report` goal is bound to the `verify` phase.
+- Many Java rules need the compiled bytecode, which the Maven plugin provides, so it is preferred over the generic scanner CLI.

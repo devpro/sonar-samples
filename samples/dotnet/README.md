@@ -1,21 +1,32 @@
 # .NET sample
 
-ASP.NET Core 10 with xUnit, scanned by the SonarScanner for .NET.
+Scan an ASP.NET Core 10 sample with xUnit with the SonarScanner for .NET.
 
-- Project key: `sonar-samples-dotnet`
-- Coverage: Coverlet OpenCover XML, `**/coverage.opencover.xml`
-- Tests: TRX, `**/*.trx`
-- Rules raised: [docs/rules.md](../../docs/rules.md)
+## How to run
+
+The scanner is installed once, as a global tool, and `~/.dotnet/tools` must be on the `PATH`:
 
 ```bash
-dotnet tool install --global dotnet-sonarscanner   # once, needs ~/.dotnet/tools on the PATH
-task build:dotnet
-task scan:dotnet   # runs scan.sh
+dotnet tool install --global dotnet-sonarscanner
 ```
 
-## scan.sh
+Then:
 
-There is no `sonar-project.properties`: the scanner wraps the build and takes its settings on `begin`.
+```bash
+task build:dotnet   # restore, build and test
+task scan:dotnet    # run scan.sh
+```
+
+Without Task, from this directory:
+
+```bash
+bash scan.sh "$SONAR_TOKEN"
+```
+
+## Settings
+
+There is no `sonar-project.properties` file.
+The scanner wraps the build and receives its settings on the `begin` step, as done in `scan.sh`:
 
 ```bash
 dotnet sonarscanner begin \
@@ -35,13 +46,13 @@ dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
 ## Gotchas
 
-- `Format=opencover` is required, Coverlet defaults to Cobertura and coverage is then 0%.
-- `begin` runs before the build, since it injects the Roslyn analysers into it.
-- `begin`, build and `end` share a directory, otherwise `end` reports "No analyses found".
-- The token is needed on both `begin` and `end`.
-- Roslyn issues show up as `external_roslyn:*`, which is why this sample raises the most.
+- Coverlet writes Cobertura by default, which SonarQube does not read for C#, so `Format=opencover` is required to get any coverage.
+- The `begin` step runs before the build, because it injects the Roslyn analysers into it.
+- The `begin` step, the build and the `end` step must run from the same directory, otherwise `end` reports "No analyses found".
+- The token is needed on both the `begin` and the `end` steps.
+- The issues found by the Roslyn analysers show up as `external_roslyn:*`, which is why this sample raises the most issues.
 
 ## Other projects
 
-`dotnet add <test project> package coverlet.collector` adds coverage.
-Several solutions are built between a single `begin` and `end` at the root.
+Coverage is added to a test project with `dotnet add <test project> package coverlet.collector`.
+Several solutions can be analysed together by building them all between a single `begin` and `end` run at the root.

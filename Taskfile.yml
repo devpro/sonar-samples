@@ -187,8 +187,8 @@ tasks:
 
   assert:
     desc: Assert every sample was analysed, with coverage, issues and the documented rules (requires SONAR_TOKEN)
-    # Floors sit just below the values in docs/rules.md, so analyser drift passes but a sample going quiet fails
-    # The rule list is what keeps docs/rules.md honest
+    # Floors sit just below the values in docs/results.md, so analyser drift passes but a sample going quiet fails
+    # The rule list is what keeps docs/results.md honest
     cmds:
       - >-
         ./scripts/assert_analysis.sh sonar-samples-nodejs 25 5

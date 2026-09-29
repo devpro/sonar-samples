@@ -8,7 +8,7 @@ Run the whole pipeline, which builds, scans and checks every sample except angul
 task ci
 ```
 
-It fails when a sample loses its coverage, its test count, its issues, or one of the rules listed in [docs/rules.md](docs/rules.md).
+It fails when a sample loses its coverage, its test count, its issues, or one of the rules listed in [docs/results.md](docs/results.md).
 The angular sample runs apart, with `task build:angular`, `task scan:angular` and `task assert:angular`.
 
 ## Changing the deliberate issues of a sample
@@ -32,7 +32,7 @@ After changing it:
    curl -s -u "$SONAR_TOKEN:" "http://localhost:9000/api/hotspots/search?projectKey=sonar-samples-<sample>&ps=500"
    ```
 
-3. Update the sample's table in [docs/rules.md](docs/rules.md) with what fired.
+3. Update the sample's table in [docs/results.md](docs/results.md) with what fired.
 
 4. Update the sample's line under `assert:` in `Taskfile.yml`.
    It reads `assert_analysis.sh <project key> <minimum coverage> <minimum issues> <rules that must fire>`, with minimums just below the measured values.
@@ -49,7 +49,7 @@ A comment containing the word `TODO` raises `S1135` on its own, so it only goes 
    - a `showcase` file holding the deliberate issues
 2. In `Taskfile.yml`, add `build:<sample>` and `scan:<sample>`, and add the sample to `build`, `scan` and `assert`.
 3. In `.github/workflows/ci.yml`, add a build job.
-4. Add the sample to `README.md` and to [docs/rules.md](docs/rules.md).
+4. Add the sample to `README.md` and to [docs/results.md](docs/results.md).
 5. Run `task ci`.
 
 ## Rules

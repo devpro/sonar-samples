@@ -1,15 +1,12 @@
 # Python sample
 
-Python 3.12 with Flask and pytest, scanned by the SonarScanner CLI.
+Scan a Python 3.12 sample with Flask and pytest with the SonarScanner CLI.
 
-- Project key: `sonar-samples-python`
-- Coverage: `coverage.py` XML, `coverage.xml`
-- Tests: JUnit XML, `test-results.xml`
-- Rules raised: [docs/rules.md](../../docs/rules.md)
+## How to run
 
 ```bash
-task build:python   # venv, pip install, pytest with coverage
-task scan:python    # scanner CLI in Docker
+task build:python   # create the virtual environment, install, run the tests with coverage
+task scan:python    # run the scanner CLI in Docker
 ```
 
 Without Task, from this directory:
@@ -34,7 +31,7 @@ sonar.host.url=http://localhost:9000
 sonar.python.xunit.reportPath=test-results.xml
 ```
 
-`setup.cfg`:
+Coverage is configured in `setup.cfg`:
 
 ```ini
 [coverage:run]
@@ -45,7 +42,8 @@ relative_files = True
 
 ## Gotchas
 
-- `relative_files = True` is required: with absolute paths in `coverage.xml`, SonarQube drops every coverage measure and the scan still succeeds.
-- `.venv/**` is excluded, otherwise every installed dependency is analysed.
-- A bare `pip install` fails on Debian and Ubuntu (PEP 668), hence the virtualenv.
-- Pylint reports import with `sonar.python.pylint.reportPaths`, Bandit needs the generic issue format.
+- `relative_files = True` is required.
+  With absolute paths in `coverage.xml`, SonarQube drops every coverage measure and the scan still succeeds.
+- `.venv/**` is excluded, otherwise every installed dependency would be analysed.
+- On Debian and Ubuntu, `pip install` refuses to install outside a virtual environment (PEP 668), which is why the build creates one.
+- Pylint reports can be imported with `sonar.python.pylint.reportPaths`, while Bandit reports must first be converted to the generic issue format.
