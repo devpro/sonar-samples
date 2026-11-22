@@ -17,8 +17,9 @@ permissions:
   contents: read
 
 # Each sample job builds, scans and asserts its sample against a SonarQube of its own.
-# On GitHub, the job starts the SonarQube of compose.yaml, as a local run does.
+# On GitHub, the job starts the SonarQube of compose.yaml, as a local run does, and its token replaces the empty secret.
 # A runner that brings a SonarQube, such as IstarCI, sets vars.SONAR_HOST_URL and secrets.SONAR_TOKEN, and the job uses it instead.
+# The token is read from the environment, never from an expression mixing steps and secrets, which IstarCI evaluates with the steps alone.
 
 jobs:
   markup-lint:
@@ -49,6 +50,9 @@ jobs:
   nodejs:
     name: Node.js
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -62,24 +66,20 @@ jobs:
         with:
           node-version: 22
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:nodejs
       - name: Analyze with Sonar
         uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
         with:
-          host-url: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          token: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
+          host-url: ${{ env.SONAR_HOST_URL }}
+          token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/nodejs
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:nodejs
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
@@ -88,6 +88,9 @@ jobs:
   python:
     name: Python
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -101,24 +104,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:python
       - name: Analyze with Sonar
         uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
         with:
-          host-url: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          token: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
+          host-url: ${{ env.SONAR_HOST_URL }}
+          token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/python
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:python
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
@@ -127,6 +126,9 @@ jobs:
   go:
     name: Go
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -142,24 +144,20 @@ jobs:
           # no third-party dependencies, so no go.sum to key a cache on
           cache: false
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:go
       - name: Analyze with Sonar
         uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
         with:
-          host-url: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          token: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
+          host-url: ${{ env.SONAR_HOST_URL }}
+          token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/go
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:go
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
@@ -168,6 +166,9 @@ jobs:
   java:
     name: Java
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -183,24 +184,17 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:java
       # The Maven plugin is the scanner of a Maven project, which reads the compiled classes and the JaCoCo report
       - name: Analyze with Sonar
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task scan:java
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:java
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
@@ -209,6 +203,9 @@ jobs:
   dotnet:
     name: .NET
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -226,24 +223,17 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner --version 12.1.0
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:dotnet
       # The scanner for .NET wraps the build, so the analysis builds and tests the sample again
       - name: Analyze with Sonar
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task scan:dotnet
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:dotnet
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
@@ -252,6 +242,9 @@ jobs:
   angular:
     name: Angular
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     timeout-minutes: 30
     steps:
       - name: Clone repository
@@ -271,24 +264,20 @@ jobs:
           npm install --global --prefix "${RUNNER_TEMP}/npm" @angular/cli
           echo "${RUNNER_TEMP}/npm/bin" >> "$GITHUB_PATH"
       - name: Start SonarQube
-        id: sonarqube
         if: vars.SONAR_HOST_URL == ''
         run: |
           token=$(task --silent bootstrap)
           echo "::add-mask::${token}"
-          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:angular
       - name: Analyze with Sonar
         uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
         with:
-          host-url: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          token: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
+          host-url: ${{ env.SONAR_HOST_URL }}
+          token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/angular/my-angular-app
       - name: Assert the analysis
-        env:
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
-          SONAR_TOKEN: ${{ steps.sonarqube.outputs.token || secrets.SONAR_TOKEN }}
         run: task assert:angular
       - name: Show SonarQube logs
         if: failure() && vars.SONAR_HOST_URL == ''
