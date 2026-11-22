@@ -164,7 +164,7 @@ tasks:
     desc: Scan the Java sample (requires SONAR_TOKEN)
     dir: samples/java
     cmds:
-      - mvn -B verify sonar:sonar -Dsonar.token="$SONAR_TOKEN"
+      - mvn -B verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}" -Dsonar.token="$SONAR_TOKEN"
 
   scan:dotnet:
     desc: Scan the .NET sample (requires SONAR_TOKEN)
@@ -180,40 +180,68 @@ tasks:
         # --network host: reach SonarQube on localhost:9000 (Linux/Docker).
         # --user: anything written into the mounted sample must belong to the host user, or the next build fails with "permission denied".
         # SONAR_USER_HOME and SCANNER_WORKDIR_PATH: the image's own cache and work directories belong to uid 1000, so any other uid (1001 on GitHub runners) cannot write to them.
+        # The work directory sits in the sample, where the assert reads the report-task.txt of the analysis.
         docker run --rm --network host \
           --user "$(id -u):$(id -g)" \
           -e SONAR_USER_HOME=/tmp/.sonar \
-          -e SCANNER_WORKDIR_PATH=/tmp/scannerwork \
+          -e SCANNER_WORKDIR_PATH=/usr/src/.scannerwork \
           -e SONAR_TOKEN="$SONAR_TOKEN" \
           -v "$(pwd)/{{.DIR}}":/usr/src \
-          sonarsource/sonar-scanner-cli:latest
+          sonarsource/sonar-scanner-cli:latest \
+          -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}"
 
   assert:
     desc: Assert every sample was analysed, with coverage, issues and the documented rules (requires SONAR_TOKEN)
-    # Floors sit just below the values in docs/results.md, so analyser drift passes but a sample going quiet fails
-    # The rule list is what keeps docs/results.md honest
+    cmds:
+      - task: assert:nodejs
+      - task: assert:python
+      - task: assert:go
+      - task: assert:java
+      - task: assert:dotnet
+
+  # Floors sit just below the values in docs/results.md, so analyser drift passes but a sample going quiet fails
+  # The rule list is what keeps docs/results.md honest
+
+  assert:nodejs:
+    desc: Assert the Node.js sample was analysed (requires SONAR_TOKEN)
     cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-nodejs 25 5
+        ./scripts/assert_analysis.sh sonar-samples-nodejs samples/nodejs/.scannerwork/report-task.txt 25 5
         javascript:S1135,javascript:S1481,javascript:S2068,javascript:S3516,javascript:S3776,javascript:S4790
+
+  assert:python:
+    desc: Assert the Python sample was analysed (requires SONAR_TOKEN)
+    cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-python 55 5
+        ./scripts/assert_analysis.sh sonar-samples-python samples/python/.scannerwork/report-task.txt 55 5
         python:S1066,python:S1135,python:S2068,python:S3516,python:S3776,python:S5717,python:S4502,python:S4790
+
+  assert:go:
+    desc: Assert the Go sample was analysed (requires SONAR_TOKEN)
+    cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-go 25 3
+        ./scripts/assert_analysis.sh sonar-samples-go samples/go/.scannerwork/report-task.txt 25 3
         go:S1135,go:S1192,go:S3776
+
+  assert:java:
+    desc: Assert the Java sample was analysed (requires SONAR_TOKEN)
+    cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-java 30 5
+        ./scripts/assert_analysis.sh sonar-samples-java samples/java/target/sonar/report-task.txt 30 5
         java:S1066,java:S1135,java:S1192,java:S2068,java:S3776,java:S4790
+
+  assert:dotnet:
+    desc: Assert the .NET sample was analysed (requires SONAR_TOKEN)
+    cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-dotnet 30 10
+        ./scripts/assert_analysis.sh sonar-samples-dotnet samples/dotnet/.sonarqube/out/.sonar/report-task.txt 30 10
         csharpsquid:S1066,csharpsquid:S1135,csharpsquid:S1192,csharpsquid:S2068,csharpsquid:S2325,csharpsquid:S3776,csharpsquid:S4790
 
   assert:angular:
     desc: Assert the Angular sample was analysed, with coverage and tests (requires SONAR_TOKEN)
     # No rule list or issue floor, since the generated app changes with every Angular CLI release
     cmds:
-      - ./scripts/assert_analysis.sh sonar-samples-angular 1 0
+      - ./scripts/assert_analysis.sh sonar-samples-angular samples/angular/my-angular-app/.scannerwork/report-task.txt 1 0
 
   ci:
     desc: "Full local pipeline: build everything, scan it, assert the results"

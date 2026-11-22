@@ -10,7 +10,7 @@
 #
 set -euo pipefail
 
-SONAR_HOST="${SONAR_HOST:-http://localhost:9000}"
+SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 # SonarQube rejects passwords shorter than 12 characters.
 SONAR_ADMIN_PASSWORD="${SONAR_ADMIN_PASSWORD:-SonarSamples2026!}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-360}"
@@ -29,7 +29,7 @@ docker compose up -d >&2
 log "==> Waiting for SonarQube to report UP (timeout ${TIMEOUT_SECONDS}s)"
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 while true; do
-  status=$(curl -sf "${SONAR_HOST}/api/system/status" 2>/dev/null \
+  status=$(curl -sf "${SONAR_HOST_URL}/api/system/status" 2>/dev/null \
     | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || true)
   if [ "${status}" = "UP" ]; then
     log "    status: UP"
@@ -47,7 +47,7 @@ done
 log "==> Setting the admin password (SonarQube ships with admin/admin)"
 body=$(mktemp)
 code=$(curl -s -o "${body}" -w '%{http_code}' -u admin:admin \
-  -X POST "${SONAR_HOST}/api/users/change_password" \
+  -X POST "${SONAR_HOST_URL}/api/users/change_password" \
   --data-urlencode "login=admin" \
   --data-urlencode "previousPassword=admin" \
   --data-urlencode "password=${SONAR_ADMIN_PASSWORD}")
@@ -73,10 +73,10 @@ rm -f "${body}"
 log "==> Generating a user token"
 # One token name, revoked before each run, so tokens do not pile up and only the latest one is valid
 curl -s -o /dev/null -u "admin:${SONAR_ADMIN_PASSWORD}" \
-  -X POST "${SONAR_HOST}/api/user_tokens/revoke" \
+  -X POST "${SONAR_HOST_URL}/api/user_tokens/revoke" \
   --data-urlencode "name=${TOKEN_NAME}" || true
 token=$(curl -s -u "admin:${SONAR_ADMIN_PASSWORD}" \
-  -X POST "${SONAR_HOST}/api/user_tokens/generate" \
+  -X POST "${SONAR_HOST_URL}/api/user_tokens/generate" \
   --data-urlencode "name=${TOKEN_NAME}" \
   | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
 

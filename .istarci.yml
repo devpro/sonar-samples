@@ -1,0 +1,18 @@
+runner:
+  # Each sample job declares one setup action, which names the image carrying its toolchain
+  # Python has no entry, since the default image carries Python 3 with venv
+  toolchainImages:
+    node: ghcr.io/devpro/ubuntu-node:latest
+    dotnet: ghcr.io/devpro/ubuntu-dotnet:latest
+    go: golang:{version}-trixie
+    java: maven:3-eclipse-temurin-{version}
+  # The samples hold deliberate issues, so the quality gate is not what a run checks, the assert task is
+  sonarqube: true
+
+workflow:
+  # The pinned sonar/scan action extracts the scanner with unzip, which the golang image lacks
+  skipJobs: [go]
+  onDisallowedAction: fail
+  allowedActions:
+    - actions/*
+    - devpro/github-workflow-parts/*

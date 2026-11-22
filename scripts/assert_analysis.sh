@@ -5,33 +5,39 @@
 # A scanner exits 0 even when it cannot import the coverage report, so the exit code proves nothing.
 # The rule check catches a rule retired in a SonarQube release, which would otherwise leave docs/results.md quietly wrong.
 #
-# Usage: SONAR_TOKEN=<token> ./scripts/assert_analysis.sh <projectKey> [minCoverage] [minIssues] [rule,rule,...]
+# The wait reads the task of the analysis from the report-task.txt the scanner writes,
+# since an analysis token, such as the one IstarCI gives a job, may read a task but not the queue of a project.
+#
+# Usage: SONAR_TOKEN=<token> ./scripts/assert_analysis.sh <projectKey> <report-task.txt> [minCoverage] [minIssues] [rule,rule,...]
 #
 set -euo pipefail
 
-PROJECT_KEY="${1:?usage: assert_analysis.sh <projectKey> [minCoverage] [minIssues] [rule,rule,...]}"
-MIN_COVERAGE="${2:-0.1}"
-MIN_ISSUES="${3:-1}"
-REQUIRED_RULES="${4:-}"
-SONAR_HOST="${SONAR_HOST:-http://localhost:9000}"
+USAGE="usage: assert_analysis.sh <projectKey> <report-task.txt> [minCoverage] [minIssues] [rule,rule,...]"
+PROJECT_KEY="${1:?${USAGE}}"
+REPORT_TASK="${2:?${USAGE}}"
+MIN_COVERAGE="${3:-0.1}"
+MIN_ISSUES="${4:-1}"
+REQUIRED_RULES="${5:-}"
+SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 : "${SONAR_TOKEN:?SONAR_TOKEN must be set}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-180}"
 
-api() { curl -sf -u "${SONAR_TOKEN}:" "${SONAR_HOST}$1"; }
+# The token goes through a config on stdin, since an argument is readable by every process of the machine
+api() { curl -sf -K - "${SONAR_HOST_URL}$1" <<< "user = \"${SONAR_TOKEN}:\""; }
 
 # Prints the values of a JSON string field, one per line, which is enough for the flat fields read here
 field() { grep -o "\"$1\":\"[^\"]*\"" | cut -d'"' -f4 || true; }
 
-echo "==> Waiting for SonarQube to finish processing '${PROJECT_KEY}'"
+if [ ! -s "${REPORT_TASK}" ]; then
+  echo "ERROR: ${REPORT_TASK} is missing, '${PROJECT_KEY}' was not scanned" >&2
+  exit 1
+fi
+task_id=$(grep '^ceTaskId=' "${REPORT_TASK}" | cut -d= -f2-)
+
+echo "==> Waiting for SonarQube to finish processing '${PROJECT_KEY}' (task ${task_id})"
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 while true; do
-  ce=$(api "/api/ce/component?component=${PROJECT_KEY}" || echo '{}')
-  # The queue holds the pending analyses, and "current" the last finished one
-  if [[ "${ce}" == *'"queue":[]'* ]]; then
-    state=$(printf '%s' "${ce}" | field status | head -n 1)
-  else
-    state=PENDING
-  fi
+  state=$(api "/api/ce/task?id=${task_id}" | field status | head -n 1 || true)
   case "${state}" in
     SUCCESS) echo "    analysis report processed"; break ;;
     FAILED|CANCELED)

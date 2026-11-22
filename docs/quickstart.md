@@ -5,12 +5,6 @@ Docker, Task and Node.js 22 must be installed.
 
 ## Start SonarQube
 
-SonarQube needs a higher kernel limit, which has to be set again after each reboot:
-
-```bash
-sudo sysctl -w vm.max_map_count=524288
-```
-
 The following command starts SonarQube and stores a new token in `SONAR_TOKEN`:
 
 ```bash

@@ -15,16 +15,6 @@ java    | JDK 21, Maven 3.9       | Maven plugin
 dotnet  | .NET 10 SDK             | `dotnet tool install --global dotnet-sonarscanner`
 angular | Node.js 22, Angular CLI | CLI
 
-## Kernel setting
-
-SonarQube does not start unless `vm.max_map_count` is at least `524288`:
-
-```bash
-sudo sysctl -w vm.max_map_count=524288
-```
-
-The setting is lost on reboot, and [troubleshooting](troubleshooting.md) explains how to make it permanent.
-
 ## SonarScanner CLI
 
 The generic SonarScanner CLI analyses every sample except .NET and Java, which have their own scanners.
