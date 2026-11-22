@@ -18,7 +18,9 @@ dotnet restore
 
 echo ""
 echo "==> SonarScanner for .NET: begin"
-dotnet sonarscanner begin \
+# On a pull request, read from GITHUB_BASE_REF, the scanner skips the files the cache of the previous analysis holds as unchanged,
+# which against a SonarQube kept between runs leaves the sample without issues nor lines, so the sample is always analysed in full
+env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /k:"${PROJECT_KEY}" \
   /n:"${PROJECT_NAME}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \

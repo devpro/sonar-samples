@@ -90,18 +90,21 @@ if [ "${ASSERT_ISSUES}" = false ]; then
 fi
 [ "${issues:-0}" -ge "${MIN_ISSUES}" ] || errors+=("only ${issues:-0} issues, expected at least ${MIN_ISSUES}")
 
-# Security Hotspots are not returned by /api/issues/search, they have their own endpoint
 if [ -n "${REQUIRED_RULES}" ]; then
   echo "==> Checking that the documented rules still fire for '${PROJECT_KEY}'"
-  fired=$(
-    {
-      api "/api/issues/search?componentKeys=${PROJECT_KEY}&ps=500&resolved=false" | field rule
-      api "/api/hotspots/search?project=${PROJECT_KEY}&ps=500" | field ruleKey
-    } | sort -u
-  )
+  fired=$(api "/api/issues/search?componentKeys=${PROJECT_KEY}&ps=500&resolved=false" | field rule | sort -u)
   IFS=',' read -r -a required <<< "${REQUIRED_RULES}"
-  echo "    $(printf '%s\n' "${fired}" | grep -c .) distinct rules fired, ${#required[@]} required"
+  missing=()
   for rule in "${required[@]}"; do
+    grep -qxF "${rule}" <<< "${fired}" || missing+=("${rule}")
+  done
+  # Security Hotspots have an endpoint of their own, which an analysis token may not read, so it is only asked for a rule the issues lack
+  if [ "${#missing[@]}" -gt 0 ]; then
+    hotspots=$(api "/api/hotspots/search?project=${PROJECT_KEY}&ps=500" | field ruleKey | sort -u) || hotspots=""
+    fired=$(printf '%s\n%s\n' "${fired}" "${hotspots}" | sort -u)
+  fi
+  echo "    $(printf '%s\n' "${fired}" | grep -c .) distinct rules fired, ${#required[@]} required"
+  for rule in "${missing[@]}"; do
     grep -qxF "${rule}" <<< "${fired}" || errors+=("${rule} no longer fires, re-verify and update docs/results.md")
   done
 fi
