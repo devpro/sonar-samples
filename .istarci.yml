@@ -10,8 +10,6 @@ runner:
   sonarqube: true
 
 workflow:
-  # The pinned sonar/scan action extracts the scanner with unzip, which the golang image lacks
-  skipJobs: [go]
   onDisallowedAction: fail
   allowedActions:
     - actions/*

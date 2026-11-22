@@ -1,6 +1,6 @@
 services:
   sonarqube:
-    image: sonarqube:26.6.0.123539-community
+    image: sonarqube:26.11.0.134175-community
     depends_on:
       postgres:
         condition: service_healthy

@@ -15,6 +15,7 @@ SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 SONAR_ADMIN_PASSWORD="${SONAR_ADMIN_PASSWORD:-SonarSamples2026!}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-360}"
 TOKEN_NAME="sonar-samples"
+PROFILE="Sonar way comprehensive"
 
 log() { echo "$*" >&2; }
 
@@ -87,4 +88,24 @@ if [ -z "${token}" ]; then
 fi
 
 log "    token generated"
+
+# The showcase rules are spread over the tiers of the built-in profiles, and only the comprehensive one holds them all,
+# so each sample project is created ahead of its first analysis and given that profile for its languages.
+log "==> Assigning the '${PROFILE}' quality profile to the sample projects"
+admin() { curl -sf -o /dev/null -K - -X POST "${SONAR_HOST_URL}$1" "${@:2}" <<< "user = \"admin:${SONAR_ADMIN_PASSWORD}\""; }
+for entry in nodejs:js python:py go:go java:java dotnet:cs angular:ts,js; do
+  sample="${entry%%:*}"
+  project="sonar-samples-${sample}"
+  admin /api/projects/create --data-urlencode "project=${project}" --data-urlencode "name=sonar-samples / ${sample}" || true
+  IFS=',' read -r -a languages <<< "${entry#*:}"
+  for language in "${languages[@]}"; do
+    if ! admin /api/qualityprofiles/add_project --data-urlencode "language=${language}" \
+      --data-urlencode "qualityProfile=${PROFILE}" --data-urlencode "project=${project}"; then
+      log "ERROR: could not assign '${PROFILE}' to ${project} for ${language}"
+      exit 1
+    fi
+  done
+done
+log "    profile assigned"
+
 echo "${token}"

@@ -28,8 +28,8 @@ After changing it:
    Security Hotspots are only in the second call:
 
    ```bash
-   curl -s -u "$SONAR_TOKEN:" "http://localhost:9000/api/issues/search?componentKeys=sonar-samples-<sample>&ps=500&resolved=false"
-   curl -s -u "$SONAR_TOKEN:" "http://localhost:9000/api/hotspots/search?projectKey=sonar-samples-<sample>&ps=500"
+   curl -s -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9000/api/issues/search?componentKeys=sonar-samples-<sample>&ps=500&resolved=false"
+   curl -s -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9000/api/hotspots/search?project=sonar-samples-<sample>&ps=500"
    ```
 
 3. Update the sample's table in [docs/results.md](docs/results.md) with what fired.

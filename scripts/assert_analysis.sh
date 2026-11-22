@@ -8,7 +8,7 @@
 # The wait reads the task of the analysis from the report-task.txt the scanner writes,
 # since an analysis token, such as the one IstarCI gives a job, may read a task but not the queue of a project.
 #
-# Usage: SONAR_TOKEN=<token> ./scripts/assert_analysis.sh <projectKey> <report-task.txt> [minCoverage] [minIssues] [rule,rule,...]
+# Usage: SONAR_TOKEN=<token> [SONAR_ASSERT_ISSUES=false] ./scripts/assert_analysis.sh <projectKey> <report-task.txt> [minCoverage] [minIssues] [rule,rule,...]
 #
 set -euo pipefail
 
@@ -21,6 +21,9 @@ REQUIRED_RULES="${5:-}"
 SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 : "${SONAR_TOKEN:?SONAR_TOKEN must be set}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-180}"
+# The issues and the rules depend on the quality profile, which only the SonarQube that sonar_bootstrap.sh prepares is known to have,
+# so against another one, such as the shared SonarQube of IstarCI, SONAR_ASSERT_ISSUES=false checks that the analysis landed and no more.
+ASSERT_ISSUES="${SONAR_ASSERT_ISSUES:-true}"
 
 # The token goes through a config on stdin, since an argument is readable by every process of the machine
 api() { curl -sf -K - "${SONAR_HOST_URL}$1" <<< "user = \"${SONAR_TOKEN}:\""; }
@@ -69,6 +72,11 @@ elif awk -v c="${coverage}" -v m="${MIN_COVERAGE}" 'BEGIN { exit !(c < m) }'; th
   errors+=("coverage ${coverage} is below ${MIN_COVERAGE}, the coverage report path is probably wrong")
 fi
 [ "${tests:-0}" -gt 0 ] || errors+=("no test count, the test execution report was never imported")
+if [ "${ASSERT_ISSUES}" = false ]; then
+  echo "    issues and rules not checked, SONAR_ASSERT_ISSUES is false"
+  MIN_ISSUES=0
+  REQUIRED_RULES=""
+fi
 [ "${issues:-0}" -ge "${MIN_ISSUES}" ] || errors+=("only ${issues:-0} issues, expected at least ${MIN_ISSUES}")
 
 # Security Hotspots are not returned by /api/issues/search, they have their own endpoint
@@ -77,7 +85,7 @@ if [ -n "${REQUIRED_RULES}" ]; then
   fired=$(
     {
       api "/api/issues/search?componentKeys=${PROJECT_KEY}&ps=500&resolved=false" | field rule
-      api "/api/hotspots/search?projectKey=${PROJECT_KEY}&ps=500" | field ruleKey
+      api "/api/hotspots/search?project=${PROJECT_KEY}&ps=500" | field ruleKey
     } | sort -u
   )
   IFS=',' read -r -a required <<< "${REQUIRED_RULES}"

@@ -19,12 +19,13 @@ permissions:
 # Each sample job builds, scans and asserts its sample against a SonarQube of its own.
 # On GitHub, the job starts the SonarQube of compose.yaml, as a local run does, and its token replaces the empty secret.
 # A runner that brings a SonarQube, such as IstarCI, sets vars.SONAR_HOST_URL and secrets.SONAR_TOKEN, and the job uses it instead.
+# Its quality profile is not the one the bootstrap gives the samples, so the assert only checks there that each analysis landed.
 # The token is read from the environment, never from an expression mixing steps and secrets, which IstarCI evaluates with the steps alone.
 
 jobs:
   markup-lint:
     name: Markup
-    uses: devpro/github-workflow-parts/.github/workflows/reusable-markup-lint.yml@398cf79719f90e41e3407bc9f060e297629d800d
+    uses: devpro/github-workflow-parts/.github/workflows/reusable-markup-lint.yml@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
 
   repository-check:
     name: Repository
@@ -36,7 +37,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Check the Taskfile parses
         run: task --list-all
       - name: Check compose.yaml
@@ -53,6 +54,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -60,7 +62,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
@@ -74,7 +76,7 @@ jobs:
       - name: Build and test
         run: task build:nodejs
       - name: Analyze with Sonar
-        uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
           token: ${{ env.SONAR_TOKEN }}
@@ -91,6 +93,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -98,7 +101,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
@@ -112,7 +115,7 @@ jobs:
       - name: Build and test
         run: task build:python
       - name: Analyze with Sonar
-        uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
           token: ${{ env.SONAR_TOKEN }}
@@ -129,6 +132,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -136,7 +140,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
         with:
@@ -152,7 +156,7 @@ jobs:
       - name: Build and test
         run: task build:go
       - name: Analyze with Sonar
-        uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
           token: ${{ env.SONAR_TOKEN }}
@@ -169,6 +173,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -176,7 +181,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install Java
         uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880  # v6.3.0
         with:
@@ -206,6 +211,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
@@ -213,7 +219,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install .NET
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
         with:
@@ -245,6 +251,7 @@ jobs:
     env:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
     timeout-minutes: 30
     steps:
       - name: Clone repository
@@ -252,7 +259,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Task
-        uses: devpro/github-workflow-parts/actions/task/setup@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
@@ -272,7 +279,7 @@ jobs:
       - name: Build and test
         run: task build:angular
       - name: Analyze with Sonar
-        uses: devpro/github-workflow-parts/actions/sonar/scan@398cf79719f90e41e3407bc9f060e297629d800d
+        uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
           token: ${{ env.SONAR_TOKEN }}

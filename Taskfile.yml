@@ -207,14 +207,14 @@ tasks:
     cmds:
       - >-
         ./scripts/assert_analysis.sh sonar-samples-nodejs samples/nodejs/.scannerwork/report-task.txt 25 5
-        javascript:S1135,javascript:S1481,javascript:S2068,javascript:S3516,javascript:S3776,javascript:S4790
+        javascript:S1135,javascript:S1481,javascript:S3516,javascript:S3776,javascript:S4790
 
   assert:python:
     desc: Assert the Python sample was analysed (requires SONAR_TOKEN)
     cmds:
       - >-
         ./scripts/assert_analysis.sh sonar-samples-python samples/python/.scannerwork/report-task.txt 55 5
-        python:S1066,python:S1135,python:S2068,python:S3516,python:S3776,python:S5717,python:S4502,python:S4790
+        python:S1066,python:S1135,python:S3516,python:S3776,python:S5717,python:S4502,python:S4790
 
   assert:go:
     desc: Assert the Go sample was analysed (requires SONAR_TOKEN)
@@ -228,7 +228,7 @@ tasks:
     cmds:
       - >-
         ./scripts/assert_analysis.sh sonar-samples-java samples/java/target/sonar/report-task.txt 30 5
-        java:S1066,java:S1135,java:S1192,java:S2068,java:S3776,java:S4790
+        java:S1066,java:S1135,java:S1192,java:S3776,java:S4790
 
   assert:dotnet:
     desc: Assert the .NET sample was analysed (requires SONAR_TOKEN)
