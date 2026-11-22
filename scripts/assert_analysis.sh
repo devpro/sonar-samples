@@ -22,7 +22,7 @@ SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 : "${SONAR_TOKEN:?SONAR_TOKEN must be set}"
 TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-180}"
 # The issues and the rules depend on the quality profile, which only the SonarQube that sonar_bootstrap.sh prepares is known to have,
-# so against another one, such as the shared SonarQube of IstarCI, SONAR_ASSERT_ISSUES=false checks that the analysis landed and no more.
+# so against another one, whose profile is unknown, SONAR_ASSERT_ISSUES=false checks that the analysis landed and no more.
 ASSERT_ISSUES="${SONAR_ASSERT_ISSUES:-true}"
 
 # The token goes through a config on stdin, since an argument is readable by every process of the machine

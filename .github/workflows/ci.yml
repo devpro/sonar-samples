@@ -19,7 +19,8 @@ permissions:
 # Each sample job builds, scans and asserts its sample against a SonarQube of its own.
 # On GitHub, the job starts the SonarQube of compose.yaml, as a local run does, and its token replaces the empty secret.
 # A runner that brings a SonarQube, such as IstarCI, sets vars.SONAR_HOST_URL and secrets.SONAR_TOKEN, and the job uses it instead.
-# Its quality profile is not the one the bootstrap gives the samples, so the assert only checks there that each analysis landed.
+# Its quality profile may not be the one the bootstrap gives the samples, so the assert only checks there that each analysis landed,
+# unless the runner sets SONAR_ASSERT_ISSUES to true, as .istarci.yml does with the profile it names.
 # The token is read from the environment, never from an expression mixing steps and secrets, which IstarCI evaluates with the steps alone.
 
 jobs:
