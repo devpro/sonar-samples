@@ -26,7 +26,18 @@ TIMEOUT_SECONDS="${SONAR_TIMEOUT_SECONDS:-180}"
 ASSERT_ISSUES="${SONAR_ASSERT_ISSUES:-true}"
 
 # The token goes through a config on stdin, since an argument is readable by every process of the machine
-api() { curl -sf -K - "${SONAR_HOST_URL}$1" <<< "user = \"${SONAR_TOKEN}:\""; }
+# A refusal names the call and its status, since curl alone only says it failed
+api() {
+  local code
+  code=$(curl -s -o "${body}" -w '%{http_code}' -K - "${SONAR_HOST_URL}$1" <<< "user = \"${SONAR_TOKEN}:\"") || code=000
+  if [ "${code}" != 200 ]; then
+    echo "ERROR: HTTP ${code} from $1: $(head -c 300 "${body}")" >&2
+    return 1
+  fi
+  cat "${body}"
+}
+body=$(mktemp)
+trap 'rm -f "${body}"' EXIT
 
 # Prints the values of a JSON string field, one per line, which is enough for the flat fields read here
 field() { grep -o "\"$1\":\"[^\"]*\"" | cut -d'"' -f4 || true; }
@@ -96,6 +107,7 @@ if [ -n "${REQUIRED_RULES}" ]; then
 fi
 
 if [ "${#errors[@]}" -gt 0 ]; then
+  echo "    measures: ${measures}" >&2
   echo "ERROR: ${PROJECT_KEY} failed validation:" >&2
   printf '  - %s\n' "${errors[@]}" >&2
   exit 1
