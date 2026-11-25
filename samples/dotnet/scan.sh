@@ -9,11 +9,21 @@ if [[ -z "${TOKEN}" ]]; then
   exit 1
 fi
 
+# The scanner finds nothing when its steps run from different directories
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 PROJECT_KEY="sonar-samples-dotnet"
 PROJECT_NAME="sonar-samples / dotnet"
 
+# SonarCloud needs an organization, which a SonarQube server has no notion of
+organization=()
+if [[ -n "${SONAR_ORG:-}" ]]; then
+  organization=(/o:"${SONAR_ORG}")
+fi
+
 echo "==> dotnet restore"
+dotnet tool restore
 dotnet restore
 
 echo ""
@@ -23,10 +33,10 @@ echo "==> SonarScanner for .NET: begin"
 env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /k:"${PROJECT_KEY}" \
   /n:"${PROJECT_NAME}" \
+  "${organization[@]}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${TOKEN}" \
-  /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
-  /d:sonar.cs.vstest.reportsPaths="**/*.trx"
+  /s:"${PWD}/SonarQube.Analysis.xml"
 
 echo ""
 echo "==> dotnet build"
@@ -34,9 +44,13 @@ dotnet build --no-restore
 
 echo ""
 echo "==> dotnet test (with coverage)"
-dotnet test --no-build --logger trx \
-  --collect:"XPlat Code Coverage" \
-  -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+rm -rf report
+dotnet test --no-build --results-directory report/TestResults \
+  --report-xunit-trx --coverage --coverage-output-format cobertura
+
+echo ""
+echo "==> ReportGenerator: Cobertura to the generic format of SonarQube"
+dotnet reportgenerator "-reports:report/TestResults/*.cobertura.xml" "-targetdir:report" "-reporttypes:SonarQube;Html;TextSummary"
 
 echo ""
 echo "==> SonarScanner for .NET: end"

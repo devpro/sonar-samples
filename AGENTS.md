@@ -40,6 +40,7 @@ Applies to Markdown, code comments, commit messages and prose in scripts.
 
 A rule is never claimed to fire without seeing it in the issue list or the hotspot list, see `CONTRIBUTING.md`.
 `task ci` builds, scans and asserts everything.
+Where `istarci` is on the `PATH`, `istarci wait` gives the result of a commit and `istarci quality --commit HEAD --all` its findings, see `docs/istarci.md`.
 `docs/results` and the `assert` floors in `Taskfile.yml` change together.
 
 Without Maven on the `PATH`, the Java sample builds in a container, see `samples/java/README.md`.

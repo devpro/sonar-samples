@@ -16,7 +16,7 @@ Without Task, from this directory:
 
 ```bash
 ./setup.sh
-cd my-angular-app
+cd sonar-samples-angular
 ng build
 ng test --watch=false --coverage --coverage-reporters=lcovonly \
   --reporters=vitest-sonar-reporter --reporters=default --output-file=test-report.xml
@@ -25,7 +25,7 @@ sonar-scanner -Dsonar.token="$SONAR_TOKEN"
 
 ## Settings
 
-The `sonar-project.properties` file of this directory is copied into `my-angular-app/` by `setup.sh`:
+The `sonar-project.properties` file of this directory is copied into `sonar-samples-angular/` by `setup.sh`:
 
 ```ini
 sonar.projectKey=sonar-samples-angular
@@ -45,7 +45,7 @@ sonar.host.url=http://localhost:9000
 - `ng new` installs neither `@vitest/coverage-v8` nor `vitest-sonar-reporter`, so `setup.sh` adds them.
 - TypeScript coverage is read from `sonar.javascript.lcov.reportPaths`, and the `sonar.typescript.` variant is ignored.
 - Since Angular 20, the coverage report is written in a subdirectory named after the project, which is why the path contains a wildcard.
-- The scanner skips the files ignored by git, and `my-angular-app/` is ignored in this repository.
+- The scanner skips the files ignored by git, and `sonar-samples-angular/` is ignored in this repository.
   Without `sonar.scm.exclusions.disabled=true`, the scanner reports `0 files indexed` and still succeeds.
 - The test report is only imported when the spec files are indexed as tests.
   This is why `sonar.tests` includes the specs while `sonar.exclusions` removes them from the sources.

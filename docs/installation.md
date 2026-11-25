@@ -12,7 +12,7 @@ nodejs  | Node.js 22              | CLI
 python  | Python 3.12 with `venv` | CLI
 go      | Go 1.23                 | CLI
 java    | JDK 21, Maven 3.9       | Maven plugin
-dotnet  | .NET 10 SDK             | `dotnet tool install --global dotnet-sonarscanner`
+dotnet  | .NET 10 SDK             | `dotnet tool restore`, done by the build and the scan
 angular | Node.js 22, Angular CLI | CLI
 
 ## SonarScanner CLI

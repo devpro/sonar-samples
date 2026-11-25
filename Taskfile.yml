@@ -88,6 +88,9 @@ tasks:
   build:go:
     desc: Build and test the Go sample
     dir: samples/go
+    env:
+      # Go versions cut the coverage blocks differently, so one version gives the same coverage on every machine
+      GOTOOLCHAIN: go1.26.11
     cmds:
       - go vet ./...
       - go build ./...
@@ -105,27 +108,31 @@ tasks:
     desc: Build and test the .NET sample
     dir: samples/dotnet
     cmds:
+      - dotnet tool restore
       - dotnet restore
+      - dotnet format --verify-no-changes --severity warn --no-restore
       - dotnet build --no-restore
-      # Every `dotnet test` run writes TestResults/<new-guid>/coverage.opencover.xml, and the scanner glob matches all of them.
-      # Stale reports from earlier runs would be merged in, so local coverage drifts upward until they are cleared.
-      - rm -rf tests/*/TestResults
+      # Report names are unique to a run, and those of an earlier run would be merged in
+      - rm -rf report
       - >-
-        dotnet test --no-build --collect:"XPlat Code Coverage"
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-      - test -n "$(find . -name coverage.opencover.xml -size +0)"
+        dotnet test --no-build --results-directory report/TestResults
+        --report-xunit-trx --coverage --coverage-output-format cobertura
+      - >-
+        dotnet reportgenerator "-reports:report/TestResults/*.cobertura.xml" "-targetdir:report"
+        "-reporttypes:SonarQube;Html;TextSummary"
+      - test -s report/SonarQube.xml
 
   build:angular:
     desc: Scaffold the Angular app, then build and test it with coverage
     dir: samples/angular
     cmds:
       - ./setup.sh
-      - cd my-angular-app && npx ng build
+      - cd sonar-samples-angular && npx ng build
       - >-
-        cd my-angular-app && npx ng test --watch=false --coverage --coverage-reporters=lcovonly
+        cd sonar-samples-angular && npx ng test --watch=false --coverage --coverage-reporters=lcovonly
         --reporters=vitest-sonar-reporter --reporters=default --output-file=test-report.xml
-      - test -n "$(find my-angular-app/coverage -name lcov.info -size +0)"
-      - test -s my-angular-app/test-report.xml
+      - test -n "$(find sonar-samples-angular/coverage -name lcov.info -size +0)"
+      - test -s sonar-samples-angular/test-report.xml
 
   scan:
     desc: Scan every sample (requires SONAR_TOKEN)
@@ -158,13 +165,13 @@ tasks:
     desc: Scan the Angular sample (requires SONAR_TOKEN)
     cmds:
       - task: _scanner-cli
-        vars: { DIR: samples/angular/my-angular-app }
+        vars: { DIR: samples/angular/sonar-samples-angular }
 
   scan:java:
     desc: Scan the Java sample (requires SONAR_TOKEN)
     dir: samples/java
     cmds:
-      - mvn -B verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}" -Dsonar.token="$SONAR_TOKEN"
+      - mvn -B verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}" -Dsonar.token="$SONAR_TOKEN" ${SONAR_ORG:+-Dsonar.organization="$SONAR_ORG"}
 
   scan:dotnet:
     desc: Scan the .NET sample (requires SONAR_TOKEN)
@@ -241,7 +248,7 @@ tasks:
     desc: Assert the Angular sample was analysed, with coverage and tests (requires SONAR_TOKEN)
     # No rule list or issue floor, since the generated app changes with every Angular CLI release
     cmds:
-      - ./scripts/assert_analysis.sh sonar-samples-angular samples/angular/my-angular-app/.scannerwork/report-task.txt 1 0
+      - ./scripts/assert_analysis.sh sonar-samples-angular samples/angular/sonar-samples-angular/.scannerwork/report-task.txt 1 0
 
   ci:
     desc: "Full local pipeline: build everything, scan it, assert the results"
