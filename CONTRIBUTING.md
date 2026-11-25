@@ -45,7 +45,7 @@ A comment containing the word `TODO` raises `S1135` on its own, so it only goes 
 ## Adding a sample
 
 1. Create `samples/<sample>/` with:
-   - a short `README.md`, like the other samples
+   - a short `README.md` with its SonarCloud badges, like the other samples
    - a `sonar-project.properties` pointing at `http://localhost:9000`, with no token
    - tests that write a coverage report and a test execution report
    - a `showcase` file holding the deliberate issues

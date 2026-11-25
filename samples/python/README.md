@@ -1,5 +1,8 @@
 # Python sample
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-python&metric=alert_status)](https://sonarcloud.io/dashboard?id=sonar-samples-python)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-python&metric=coverage)](https://sonarcloud.io/dashboard?id=sonar-samples-python)
+
 Scan a Python 3.12 sample with Flask and pytest with the SonarScanner CLI.
 
 ## How to run

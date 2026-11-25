@@ -1,5 +1,8 @@
 # .NET sample
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-dotnet&metric=alert_status)](https://sonarcloud.io/dashboard?id=sonar-samples-dotnet)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-dotnet&metric=coverage)](https://sonarcloud.io/dashboard?id=sonar-samples-dotnet)
+
 Scan an ASP.NET Core 10 sample with xUnit v3 with the SonarScanner for .NET.
 
 ## How to run
