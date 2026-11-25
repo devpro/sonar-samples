@@ -2,20 +2,8 @@
 
 ## SonarQube does not start
 
-The kernel setting `vm.max_map_count` is too low, which `task logs` confirms.
-On Linux, the fix is made permanent with:
-
-```bash
-echo "vm.max_map_count=524288" | sudo tee /etc/sysctl.d/99-sonarqube.conf
-sudo sysctl --system
-```
-
-On WSL2, the setting goes in `%UserProfile%\.wslconfig`, and takes effect after `wsl --shutdown`:
-
-```ini
-[wsl2]
-kernelCommandLine = sysctl.vm.max_map_count=524288
-```
+`task logs` says why.
+Elasticsearch runs without memory mapping, as set in `compose.yaml`, so `vm.max_map_count` is never the cause and needs no `sudo sysctl`.
 
 ## `network ... not found` on start
 

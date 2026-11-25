@@ -37,3 +37,5 @@ sonar.testExecutionReportPaths=coverage/test-report.xml
   `"collectCoverageFrom": ["src/**/*.js"]` in `package.json` makes it report the other files too.
 - TypeScript uses the same `sonar.javascript.` property, and the `sonar.typescript.` one is ignored.
 - The test report is written by `jest-sonar`, which is declared as a Jest reporter in `package.json`.
+- `overrides` in `package.json` lifts `glob` to 14 and `minimatch` to 11, the first releases without a known vulnerability, which no Jest 30 release asks for yet.
+  They go once a Jest release depends on those versions itself.

@@ -28,14 +28,14 @@ After changing it:
    Security Hotspots are only in the second call:
 
    ```bash
-   curl -s -u "$SONAR_TOKEN:" "http://localhost:9000/api/issues/search?componentKeys=sonar-samples-<sample>&ps=500&resolved=false"
-   curl -s -u "$SONAR_TOKEN:" "http://localhost:9000/api/hotspots/search?projectKey=sonar-samples-<sample>&ps=500"
+   curl -s -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9000/api/issues/search?componentKeys=sonar-samples-<sample>&ps=500&resolved=false"
+   curl -s -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9000/api/hotspots/search?project=sonar-samples-<sample>&ps=500"
    ```
 
 3. Update the sample's table in [docs/results.md](docs/results.md) with what fired.
 
-4. Update the sample's line under `assert:` in `Taskfile.yml`.
-   It reads `assert_analysis.sh <project key> <minimum coverage> <minimum issues> <rules that must fire>`, with minimums just below the measured values.
+4. Update the sample's `assert:<sample>` task in `Taskfile.yml`.
+   It reads `assert_analysis.sh <project key> <report-task.txt> <minimum coverage> <minimum issues> <rules that must fire>`, with minimums just below the measured values.
 
 A rule key goes in a comment on the line that triggers it.
 A comment containing the word `TODO` raises `S1135` on its own, so it only goes where that is intended.
@@ -47,8 +47,9 @@ A comment containing the word `TODO` raises `S1135` on its own, so it only goes 
    - a `sonar-project.properties` pointing at `http://localhost:9000`, with no token
    - tests that write a coverage report and a test execution report
    - a `showcase` file holding the deliberate issues
-2. In `Taskfile.yml`, add `build:<sample>` and `scan:<sample>`, and add the sample to `build`, `scan` and `assert`.
-3. In `.github/workflows/ci.yml`, add a build job.
+2. In `Taskfile.yml`, add `build:<sample>`, `scan:<sample>` and `assert:<sample>`, and add the sample to `build`, `scan` and `assert`.
+3. In `.github/workflows/ci.yml`, add a job that builds, scans and asserts the sample, like the others.
+   Its toolchain image goes under `runner.toolchainImages` in `.istarci.yml` when the default image lacks it.
 4. Add the sample to `README.md` and to [docs/results.md](docs/results.md).
 5. Run `task ci`.
 

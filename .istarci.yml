@@ -1,0 +1,24 @@
+runner:
+  toolchainImages:
+    node: ghcr.io/devpro/ubuntu-node:latest
+    dotnet: ghcr.io/devpro/ubuntu-dotnet:latest
+    go: golang:{version}-trixie
+    java: maven:3-eclipse-temurin-{version}
+  sonarqube:
+    profile: Sonar way comprehensive
+    projects:
+      - sonar-samples-nodejs
+      - sonar-samples-python
+      - sonar-samples-go
+      - sonar-samples-java
+      - sonar-samples-dotnet
+      - sonar-samples-angular
+
+env:
+  SONAR_ASSERT_ISSUES: "true"
+
+workflow:
+  onDisallowedAction: fail
+  allowedActions:
+    - actions/*
+    - devpro/github-workflow-parts/*

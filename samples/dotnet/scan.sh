@@ -9,7 +9,7 @@ if [[ -z "${TOKEN}" ]]; then
   exit 1
 fi
 
-SONAR_HOST="http://localhost:9000"
+SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 PROJECT_KEY="sonar-samples-dotnet"
 PROJECT_NAME="sonar-samples / dotnet"
 
@@ -18,10 +18,12 @@ dotnet restore
 
 echo ""
 echo "==> SonarScanner for .NET: begin"
-dotnet sonarscanner begin \
+# On a pull request, read from GITHUB_BASE_REF, the scanner skips the files the cache of the previous analysis holds as unchanged,
+# which against a SonarQube kept between runs leaves the sample without issues nor lines, so the sample is always analysed in full
+env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /k:"${PROJECT_KEY}" \
   /n:"${PROJECT_NAME}" \
-  /d:sonar.host.url="${SONAR_HOST}" \
+  /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${TOKEN}" \
   /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
   /d:sonar.cs.vstest.reportsPaths="**/*.trx"
@@ -41,4 +43,4 @@ echo "==> SonarScanner for .NET: end"
 dotnet sonarscanner end /d:sonar.token="${TOKEN}"
 
 echo ""
-echo "Done. View results at: ${SONAR_HOST}/dashboard?id=${PROJECT_KEY}"
+echo "Done. View results at: ${SONAR_HOST_URL}/dashboard?id=${PROJECT_KEY}"
