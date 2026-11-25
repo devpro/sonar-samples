@@ -225,10 +225,6 @@ jobs:
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
         with:
           dotnet-version: "10.0.x"
-      - name: Install the Sonar scanner for .NET
-        run: |
-          dotnet tool install --global dotnet-sonarscanner --version 12.1.0
-          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
       - name: Start SonarQube
         if: vars.SONAR_HOST_URL == ''
         run: |

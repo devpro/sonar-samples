@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- The scanner for .NET never reads a sonar-project.properties, so this file holds the settings that belong with the code.
+     The project key and name are refused here and stay on the command line, as does the token, which is a secret. -->
+<SonarQubeAnalysisProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+  <Property Name="sonar.exclusions">report/**</Property>
+  <Property Name="sonar.coverageReportPaths">report/SonarQube.xml</Property>
+  <Property Name="sonar.cs.vstest.reportsPaths">report/TestResults/*.trx</Property>
+</SonarQubeAnalysisProperties>

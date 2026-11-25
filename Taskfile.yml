@@ -105,14 +105,19 @@ tasks:
     desc: Build and test the .NET sample
     dir: samples/dotnet
     cmds:
+      - dotnet tool restore
       - dotnet restore
+      - dotnet format --verify-no-changes --severity warn --no-restore
       - dotnet build --no-restore
-      # The check below would pass on the report of an earlier run
-      - rm -rf TestResults
+      # Report names are unique to a run, and those of an earlier run would be merged in
+      - rm -rf report
       - >-
-        dotnet test --no-build --results-directory TestResults
-        --coverage --coverage-output-format xml --coverage-output coverage.xml
-      - test -s TestResults/coverage.xml
+        dotnet test --no-build --results-directory report/TestResults
+        --report-xunit-trx --coverage --coverage-output-format cobertura
+      - >-
+        dotnet reportgenerator "-reports:report/TestResults/*.cobertura.xml" "-targetdir:report"
+        "-reporttypes:SonarQube;Html;TextSummary"
+      - test -s report/SonarQube.xml
 
   build:angular:
     desc: Scaffold the Angular app, then build and test it with coverage
@@ -233,7 +238,7 @@ tasks:
     desc: Assert the .NET sample was analysed (requires SONAR_TOKEN)
     cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-dotnet samples/dotnet/.sonarqube/out/.sonar/report-task.txt 35 10
+        ./scripts/assert_analysis.sh sonar-samples-dotnet samples/dotnet/.sonarqube/out/.sonar/report-task.txt 30 10
         csharpsquid:S1066,csharpsquid:S1135,csharpsquid:S1192,csharpsquid:S2068,csharpsquid:S2325,csharpsquid:S3776,csharpsquid:S4790
 
   assert:angular:

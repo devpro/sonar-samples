@@ -10,6 +10,7 @@ bin/
 obj/
 .sonarqube/
 TestResults/
+samples/dotnet/report/
 *.user
 
 # Python

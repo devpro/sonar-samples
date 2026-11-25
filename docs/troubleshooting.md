@@ -20,7 +20,7 @@ Language   | Property                               | Path
 JS / TS    | `sonar.javascript.lcov.reportPaths`    | `coverage/lcov.info`
 Python     | `sonar.python.coverage.reportPaths`    | `coverage.xml`
 Go         | `sonar.go.coverage.reportPaths`        | `coverage.out`
-C#         | `sonar.cs.vscoveragexml.reportsPaths`  | `TestResults/coverage.xml`
+C#         | `sonar.coverageReportPaths`            | `report/SonarQube.xml`
 Java       | `sonar.coverage.jacoco.xmlReportPaths` | `target/site/jacoco/jacoco.xml`
 
 The most common causes are:
@@ -28,7 +28,7 @@ The most common causes are:
 - In TypeScript, the report is set in `sonar.typescript.lcov.reportPaths`, which is ignored.
 - In Python, `relative_files = True` is missing under `[coverage:run]`, so the paths are absolute and dropped.
 - In Java, the build ran `mvn test` instead of `mvn verify`.
-- In .NET, `--coverage-output-format xml` is missing, and SonarQube does not read Cobertura for C#.
+- In .NET, the Cobertura report is not converted by ReportGenerator, and SonarQube does not read Cobertura for C#.
 - Since Angular 20, the report is in `coverage/<project-name>/lcov.info`.
 
 ## Tests count is missing

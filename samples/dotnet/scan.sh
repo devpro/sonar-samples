@@ -9,11 +9,15 @@ if [[ -z "${TOKEN}" ]]; then
   exit 1
 fi
 
+# The scanner finds nothing when its steps run from different directories
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 PROJECT_KEY="sonar-samples-dotnet"
 PROJECT_NAME="sonar-samples / dotnet"
 
 echo "==> dotnet restore"
+dotnet tool restore
 dotnet restore
 
 echo ""
@@ -25,8 +29,7 @@ env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /n:"${PROJECT_NAME}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${TOKEN}" \
-  /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/coverage.xml" \
-  /d:sonar.cs.vstest.reportsPaths="TestResults/tests.trx"
+  /s:"${PWD}/SonarQube.Analysis.xml"
 
 echo ""
 echo "==> dotnet build"
@@ -34,9 +37,13 @@ dotnet build --no-restore
 
 echo ""
 echo "==> dotnet test (with coverage)"
-dotnet test --no-build --results-directory TestResults \
-  --report-xunit-trx --report-xunit-trx-filename tests.trx \
-  --coverage --coverage-output-format xml --coverage-output coverage.xml
+rm -rf report
+dotnet test --no-build --results-directory report/TestResults \
+  --report-xunit-trx --coverage --coverage-output-format cobertura
+
+echo ""
+echo "==> ReportGenerator: Cobertura to the generic format of SonarQube"
+dotnet reportgenerator "-reports:report/TestResults/*.cobertura.xml" "-targetdir:report" "-reporttypes:SonarQube;Html;TextSummary"
 
 echo ""
 echo "==> SonarScanner for .NET: end"
