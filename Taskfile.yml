@@ -107,13 +107,12 @@ tasks:
     cmds:
       - dotnet restore
       - dotnet build --no-restore
-      # Every `dotnet test` run writes TestResults/<new-guid>/coverage.opencover.xml, and the scanner glob matches all of them.
-      # Stale reports from earlier runs would be merged in, so local coverage drifts upward until they are cleared.
-      - rm -rf tests/*/TestResults
+      # The check below would pass on the report of an earlier run
+      - rm -rf TestResults
       - >-
-        dotnet test --no-build --collect:"XPlat Code Coverage"
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-      - test -n "$(find . -name coverage.opencover.xml -size +0)"
+        dotnet test --no-build --results-directory TestResults
+        --coverage --coverage-output-format xml --coverage-output coverage.xml
+      - test -s TestResults/coverage.xml
 
   build:angular:
     desc: Scaffold the Angular app, then build and test it with coverage
@@ -234,7 +233,7 @@ tasks:
     desc: Assert the .NET sample was analysed (requires SONAR_TOKEN)
     cmds:
       - >-
-        ./scripts/assert_analysis.sh sonar-samples-dotnet samples/dotnet/.sonarqube/out/.sonar/report-task.txt 30 10
+        ./scripts/assert_analysis.sh sonar-samples-dotnet samples/dotnet/.sonarqube/out/.sonar/report-task.txt 35 10
         csharpsquid:S1066,csharpsquid:S1135,csharpsquid:S1192,csharpsquid:S2068,csharpsquid:S2325,csharpsquid:S3776,csharpsquid:S4790
 
   assert:angular:

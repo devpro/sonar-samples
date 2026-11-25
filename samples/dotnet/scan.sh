@@ -25,8 +25,8 @@ env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /n:"${PROJECT_NAME}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${TOKEN}" \
-  /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
-  /d:sonar.cs.vstest.reportsPaths="**/*.trx"
+  /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/coverage.xml" \
+  /d:sonar.cs.vstest.reportsPaths="TestResults/tests.trx"
 
 echo ""
 echo "==> dotnet build"
@@ -34,9 +34,9 @@ dotnet build --no-restore
 
 echo ""
 echo "==> dotnet test (with coverage)"
-dotnet test --no-build --logger trx \
-  --collect:"XPlat Code Coverage" \
-  -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+dotnet test --no-build --results-directory TestResults \
+  --report-xunit-trx --report-xunit-trx-filename tests.trx \
+  --coverage --coverage-output-format xml --coverage-output coverage.xml
 
 echo ""
 echo "==> SonarScanner for .NET: end"

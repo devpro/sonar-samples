@@ -20,7 +20,7 @@ Language   | Property                               | Path
 JS / TS    | `sonar.javascript.lcov.reportPaths`    | `coverage/lcov.info`
 Python     | `sonar.python.coverage.reportPaths`    | `coverage.xml`
 Go         | `sonar.go.coverage.reportPaths`        | `coverage.out`
-C#         | `sonar.cs.opencover.reportsPaths`      | `**/coverage.opencover.xml`
+C#         | `sonar.cs.vscoveragexml.reportsPaths`  | `TestResults/coverage.xml`
 Java       | `sonar.coverage.jacoco.xmlReportPaths` | `target/site/jacoco/jacoco.xml`
 
 The most common causes are:
@@ -28,7 +28,7 @@ The most common causes are:
 - In TypeScript, the report is set in `sonar.typescript.lcov.reportPaths`, which is ignored.
 - In Python, `relative_files = True` is missing under `[coverage:run]`, so the paths are absolute and dropped.
 - In Java, the build ran `mvn test` instead of `mvn verify`.
-- In .NET, `Format=opencover` is missing, and Coverlet writes Cobertura by default.
+- In .NET, `--coverage-output-format xml` is missing, and SonarQube does not read Cobertura for C#.
 - Since Angular 20, the report is in `coverage/<project-name>/lcov.info`.
 
 ## Tests count is missing
@@ -40,7 +40,7 @@ Language   | Property                               | Report
 JS / TS    | `sonar.testExecutionReportPaths`       | generic XML, from `jest-sonar` or `vitest-sonar-reporter`
 Python     | `sonar.python.xunit.reportPath`        | `pytest --junitxml=test-results.xml`
 Go         | `sonar.go.tests.reportPaths`           | `go test -json > test-report.json`
-C#         | `sonar.cs.vstest.reportsPaths`         | `dotnet test --logger trx`
+C#         | `sonar.cs.vstest.reportsPaths`         | `dotnet test --report-xunit-trx`
 Java       | read by the Maven plugin               | Surefire reports in `target/surefire-reports`
 
 In JavaScript and TypeScript, the report is only imported when the test files are indexed as tests, through `sonar.tests`.
