@@ -83,7 +83,7 @@ The .NET scanner analyses the compiled code and imports the issues of the Roslyn
 
 - No sample has a Security Hotspot: `S4790` and `S4502` are reported as vulnerabilities.
 - `S2068` fires on the hard-coded password in C# only, and stays silent on the same code in JavaScript, Python and Java.
-- Go has neither `S2068` nor `S4790`, so the password and MD5 code that raise issues in other languages raise nothing.
+- Go has neither `S2068` nor `S4790` on the local SonarQube, so the password and MD5 code that raise issues in other languages raise nothing.
   A clean dashboard can therefore mean that a rule is missing.
 - `go:S1192` fires on the HTTP header strings in `main.go`, and not on the repeated return values of the showcase.
 - `java:S2486` and `java:S108` do not fire on an empty catch block when it contains a comment.

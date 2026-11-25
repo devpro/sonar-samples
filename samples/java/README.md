@@ -1,5 +1,8 @@
 # Java sample
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-java&metric=alert_status)](https://sonarcloud.io/dashboard?id=sonar-samples-java)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-java&metric=coverage)](https://sonarcloud.io/dashboard?id=sonar-samples-java)
+
 Scan a Java 21 sample with Maven and JUnit 5 with the SonarScanner for Maven.
 The scanner is a Maven plugin, so there is nothing else to install.
 

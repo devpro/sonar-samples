@@ -1,5 +1,8 @@
 # Go sample
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-go&metric=alert_status)](https://sonarcloud.io/dashboard?id=sonar-samples-go)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-go&metric=coverage)](https://sonarcloud.io/dashboard?id=sonar-samples-go)
+
 Scan a Go 1.23 HTTP server with unit tests with the SonarScanner CLI.
 
 ## How to run
@@ -22,7 +25,7 @@ sonar-scanner -Dsonar.token="$SONAR_TOKEN"
 sonar.projectKey=sonar-samples-go
 sonar.projectName=sonar-samples / go
 sonar.sources=.
-sonar.exclusions=vendor/**,**/*_test.go
+sonar.exclusions=vendor/**
 sonar.tests=.
 sonar.test.inclusions=**/*_test.go
 sonar.go.coverage.reportPaths=coverage.out
@@ -33,5 +36,6 @@ sonar.go.tests.reportPaths=test-report.json
 ## Gotchas
 
 - In Go, the tests live next to the code they test.
-  The `*_test.go` files are therefore excluded from the sources and included as tests, otherwise they would be counted as production code.
-- The Go analyser has neither `S2068` nor `S4790`, so the hard-coded password and the MD5 hash in `internal/showcase` raise nothing.
+  `sonar.test.inclusions` makes the `*_test.go` files tests, and the scanner leaves them out of the sources by itself.
+- On the local SonarQube, the hard-coded password and the MD5 hash in `internal/showcase` raise nothing.
+  SonarCloud raises `go:S4790` on the hash.

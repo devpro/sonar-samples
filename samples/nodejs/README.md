@@ -1,5 +1,8 @@
 # Node.js sample
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-nodejs&metric=alert_status)](https://sonarcloud.io/dashboard?id=sonar-samples-nodejs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sonar-samples-nodejs&metric=coverage)](https://sonarcloud.io/dashboard?id=sonar-samples-nodejs)
+
 Scan a Node.js 22 sample with Jest with the SonarScanner CLI.
 
 ## How to run

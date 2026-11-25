@@ -13,6 +13,13 @@ SonarCloud | Projects                    | `sonar-samples-<sample>` | one for ea
 
 `SONAR_HOST_URL` is not set on GitHub: its presence tells the workflow that the runner brings a SonarQube, as IstarCI does.
 
+## Results
+
+The numbers differ from those of [results](results.md), which are measured locally, since the analysers are not the same.
+For example, SonarCloud raises `go:S4790` on the MD5 hash of the Go sample, where the local SonarQube raises nothing.
+
+It also analyses files next to the ones of `sonar.sources`, such as settings and scripts, which adds lines to the .NET sample.
+
 ## Gotchas
 
 - Each project is created before its first analysis, otherwise the scan can create it with an empty `master` as main branch.
