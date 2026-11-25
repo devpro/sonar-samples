@@ -90,15 +90,20 @@ fi
 log "    token generated"
 
 # The showcase rules are spread over the tiers of the built-in profiles, and only the comprehensive one holds them all,
-# so each sample project is created ahead of its first analysis and given that profile for its languages.
+# so each sample project is created ahead of its first analysis and given that profile.
+# Every language that has it is covered, as IstarCI does, since a sample also holds HTML, CSS or YAML, which the default profile would judge.
 log "==> Assigning the '${PROFILE}' quality profile to the sample projects"
 admin() { curl -sf -o /dev/null -K - -X POST "${SONAR_HOST_URL}$1" "${@:2}" <<< "user = \"admin:${SONAR_ADMIN_PASSWORD}\""; }
-for entry in nodejs:js python:py go:go java:java dotnet:cs angular:ts,js; do
-  sample="${entry%%:*}"
+languages=$(curl -sf -G -K - "${SONAR_HOST_URL}/api/qualityprofiles/search" --data-urlencode "qualityProfile=${PROFILE}" \
+  <<< "user = \"admin:${SONAR_ADMIN_PASSWORD}\"" | grep -o '"language":"[^"]*"' | cut -d'"' -f4 | sort -u || true)
+if [ -z "${languages}" ]; then
+  log "ERROR: no language has the '${PROFILE}' quality profile"
+  exit 1
+fi
+for sample in nodejs python go java dotnet angular; do
   project="sonar-samples-${sample}"
   admin /api/projects/create --data-urlencode "project=${project}" --data-urlencode "name=sonar-samples / ${sample}" || true
-  IFS=',' read -r -a languages <<< "${entry#*:}"
-  for language in "${languages[@]}"; do
+  for language in ${languages}; do
     if ! admin /api/qualityprofiles/add_project --data-urlencode "language=${language}" \
       --data-urlencode "qualityProfile=${PROFILE}" --data-urlencode "project=${project}"; then
       log "ERROR: could not assign '${PROFILE}' to ${project} for ${language}"

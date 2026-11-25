@@ -3,7 +3,7 @@ node_modules/
 dist/
 coverage/
 .angular/
-my-angular-app/
+sonar-samples-angular/
 
 # .NET
 bin/

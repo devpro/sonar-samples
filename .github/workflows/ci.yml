@@ -280,7 +280,7 @@ jobs:
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
           token: ${{ env.SONAR_TOKEN }}
-          working-directory: samples/angular/my-angular-app
+          working-directory: samples/angular/sonar-samples-angular
       - name: Assert the analysis
         run: task assert:angular
       - name: Show SonarQube logs

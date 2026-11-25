@@ -11,6 +11,8 @@ task ci
 It fails when a sample loses its coverage, its test count, its issues, or one of the rules listed in [docs/results.md](docs/results.md).
 The angular sample runs apart, with `task build:angular`, `task scan:angular` and `task assert:angular`.
 
+Where IstarCI is installed, which is optional, it runs each commit, and [docs/istarci.md](docs/istarci.md) shows how to read what SonarQube reported.
+
 ## Changing the deliberate issues of a sample
 
 Each sample has a `showcase` file with code written to trigger SonarQube rules.
@@ -50,6 +52,7 @@ A comment containing the word `TODO` raises `S1135` on its own, so it only goes 
 2. In `Taskfile.yml`, add `build:<sample>`, `scan:<sample>` and `assert:<sample>`, and add the sample to `build`, `scan` and `assert`.
 3. In `.github/workflows/ci.yml`, add a job that builds, scans and asserts the sample, like the others.
    Its toolchain image goes under `runner.toolchainImages` in `.istarci.yml` when the default image lacks it.
+   Its project is added to `runner.sonarqube.projects` in the same file.
 4. Add the sample to `README.md` and to [docs/results.md](docs/results.md).
 5. Run `task ci`.
 
