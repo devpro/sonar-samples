@@ -1,13 +1,9 @@
 runner:
-  # Each sample job declares one setup action, which names the image carrying its toolchain
-  # Python has no entry, since the default image carries Python 3 with venv
   toolchainImages:
     node: ghcr.io/devpro/ubuntu-node:latest
     dotnet: ghcr.io/devpro/ubuntu-dotnet:latest
     go: golang:{version}-trixie
     java: maven:3-eclipse-temurin-{version}
-  # The showcase rules are only all held by the comprehensive profile, the one sonar_bootstrap.sh gives the compose instance
-  # The samples hold deliberate issues, so the quality gate is not what a run checks, the assert task is
   sonarqube:
     profile: Sonar way comprehensive
     projects:
@@ -18,7 +14,6 @@ runner:
       - sonar-samples-dotnet
       - sonar-samples-angular
 
-# The shared SonarQube has the profile of the samples, so the issues and rules are asserted as on the compose instance
 env:
   SONAR_ASSERT_ISSUES: "true"
 

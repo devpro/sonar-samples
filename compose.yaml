@@ -8,7 +8,6 @@ services:
       SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonar
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: sonar
-      # Without memory mapping, Elasticsearch needs no vm.max_map_count, which only root may raise on the host
       SONAR_SEARCH_JAVAADDITIONALOPTS: -Dnode.store.allow_mmap=false
     ports:
       - "9000:9000"
