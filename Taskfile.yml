@@ -171,7 +171,7 @@ tasks:
     desc: Scan the Java sample (requires SONAR_TOKEN)
     dir: samples/java
     cmds:
-      - mvn -B verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}" -Dsonar.token="$SONAR_TOKEN"
+      - mvn -B verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL:-{{.SONAR_HOST}}}" -Dsonar.token="$SONAR_TOKEN" ${SONAR_ORG:+-Dsonar.organization="$SONAR_ORG"}
 
   scan:dotnet:
     desc: Scan the .NET sample (requires SONAR_TOKEN)

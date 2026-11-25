@@ -16,12 +16,11 @@ concurrency:
 permissions:
   contents: read
 
-# Each sample job builds, scans and asserts its sample against a SonarQube of its own.
-# On GitHub, the job starts the SonarQube of compose.yaml, as a local run does, and its token replaces the empty secret.
-# A runner that brings a SonarQube, such as IstarCI, sets vars.SONAR_HOST_URL and secrets.SONAR_TOKEN, and the job uses it instead.
-# Its quality profile may not be the one the bootstrap gives the samples, so the assert only checks there that each analysis landed,
-# unless the runner sets SONAR_ASSERT_ISSUES to true, as .istarci.yml does with the profile it names.
-# The token is read from the environment, never from an expression mixing steps and secrets, which IstarCI evaluates with the steps alone.
+# Each sample job builds its sample, then analyses it where a Sonar is available.
+# On GitHub, that is SonarCloud, with vars.SONAR_ORG and secrets.SONAR_TOKEN, see docs/sonarcloud.md.
+# The secret is empty on a pull request from a fork or opened by Dependabot, whose samples are then built without an analysis.
+# A runner that brings a SonarQube, such as IstarCI, sets vars.SONAR_HOST_URL, and the job uses it instead.
+# The assert only runs there, since the findings are expected and what SonarCloud reports on them must not block a pull request.
 
 jobs:
   markup-lint:
@@ -53,14 +52,16 @@ jobs:
     name: Node.js
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -68,38 +69,34 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:nodejs
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
+          organization: ${{ env.SONAR_ORG }}
           token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/nodejs
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:nodejs
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube
 
   python:
     name: Python
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -107,38 +104,34 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:python
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
+          organization: ${{ env.SONAR_ORG }}
           token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/python
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:python
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube
 
   go:
     name: Go
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -148,38 +141,34 @@ jobs:
           go-version: "1.26"
           # no third-party dependencies, so no go.sum to key a cache on
           cache: false
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:go
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
+          organization: ${{ env.SONAR_ORG }}
           token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/go
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:go
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube
 
   java:
     name: Java
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -189,35 +178,30 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:java
       # The Maven plugin is the scanner of a Maven project, which reads the compiled classes and the JaCoCo report
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         run: task scan:java
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:java
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube
 
   dotnet:
     name: .NET
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 20
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -225,35 +209,30 @@ jobs:
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
         with:
           dotnet-version: "10.0.x"
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:dotnet
       # The scanner for .NET wraps the build, so the analysis builds and tests the sample again
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         run: task scan:dotnet
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:dotnet
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube
 
   angular:
     name: Angular
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://localhost:9000' }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_ASSERT_ISSUES: ${{ vars.SONAR_HOST_URL == '' }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
     timeout-minutes: 30
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # the full history, which Sonar reads to date the issues
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Task
         uses: devpro/github-workflow-parts/actions/task/setup@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
@@ -267,22 +246,16 @@ jobs:
         run: |
           npm install --global --prefix "${RUNNER_TEMP}/npm" @angular/cli
           echo "${RUNNER_TEMP}/npm/bin" >> "$GITHUB_PATH"
-      - name: Start SonarQube
-        if: vars.SONAR_HOST_URL == ''
-        run: |
-          token=$(task --silent bootstrap)
-          echo "::add-mask::${token}"
-          echo "SONAR_TOKEN=${token}" >> "$GITHUB_ENV"
       - name: Build and test
         run: task build:angular
       - name: Analyze with Sonar
+        if: env.SONAR_TOKEN != ''
         uses: devpro/github-workflow-parts/actions/sonar/scan@5f20a3230f56e8e39704e976a1d2bdd9e1427c36
         with:
           host-url: ${{ env.SONAR_HOST_URL }}
+          organization: ${{ env.SONAR_ORG }}
           token: ${{ env.SONAR_TOKEN }}
           working-directory: samples/angular/sonar-samples-angular
       - name: Assert the analysis
+        if: vars.SONAR_HOST_URL != ''
         run: task assert:angular
-      - name: Show SonarQube logs
-        if: failure() && vars.SONAR_HOST_URL == ''
-        run: docker compose logs --tail 200 sonarqube

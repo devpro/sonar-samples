@@ -21,4 +21,5 @@ Small code samples in six languages with the instructions to analyze them with a
 - [Purpose](docs/purpose.md)
 - [Quickstart](docs/quickstart.md)
 - [Results](docs/results.md)
+- [SonarCloud](docs/sonarcloud.md)
 - [Troubleshooting](docs/troubleshooting.md)

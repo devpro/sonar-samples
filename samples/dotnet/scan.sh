@@ -16,6 +16,12 @@ SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
 PROJECT_KEY="sonar-samples-dotnet"
 PROJECT_NAME="sonar-samples / dotnet"
 
+# SonarCloud needs an organization, which a SonarQube server has no notion of
+organization=()
+if [[ -n "${SONAR_ORG:-}" ]]; then
+  organization=(/o:"${SONAR_ORG}")
+fi
+
 echo "==> dotnet restore"
 dotnet tool restore
 dotnet restore
@@ -27,6 +33,7 @@ echo "==> SonarScanner for .NET: begin"
 env -u GITHUB_BASE_REF dotnet sonarscanner begin \
   /k:"${PROJECT_KEY}" \
   /n:"${PROJECT_NAME}" \
+  "${organization[@]}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${TOKEN}" \
   /s:"${PWD}/SonarQube.Analysis.xml"

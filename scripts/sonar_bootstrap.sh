@@ -2,7 +2,7 @@
 #
 # Boot the local SonarQube stack and print a freshly generated user token.
 #
-# Used by CI (.github/workflows/ci.yml) via `task bootstrap`, and usable directly:
+# Used via `task bootstrap` and `task ci`, and usable directly:
 #
 #   export SONAR_TOKEN=$(./scripts/sonar_bootstrap.sh)
 #

@@ -53,6 +53,7 @@ A comment containing the word `TODO` raises `S1135` on its own, so it only goes 
 3. In `.github/workflows/ci.yml`, add a job that builds, scans and asserts the sample, like the others.
    Its toolchain image goes under `runner.toolchainImages` in `.istarci.yml` when the default image lacks it.
    Its project is added to `runner.sonarqube.projects` in the same file.
+   Its project is created on SonarCloud before the first run, see [docs/sonarcloud.md](docs/sonarcloud.md).
 4. Add the sample to `README.md` and to [docs/results.md](docs/results.md).
 5. Run `task ci`.
 

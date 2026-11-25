@@ -18,7 +18,7 @@ A sample shows configuration that works, taken from real projects and from [gith
 ## Where it runs
 
 - **On the machine**, with SonarQube in Docker and no account to create: this is what the instructions describe.
-- **On SonarQube Cloud**, nothing to set up either: the [devpro-github](https://sonarcloud.io/organizations/devpro-github/projects) organization has analyses to look at.
+- **On SonarQube Cloud**, nothing to set up either: the [devpro-github](https://sonarcloud.io/organizations/devpro-github/projects) organization has the analyses of the [GitHub pipeline](sonarcloud.md) to look at.
 - **With IstarCI**, a private project, for those who have it.
   It is optional, and a local run should report the same as it does, with the "Sonar way comprehensive" profile.
   When the results differ, IstarCI is the reference, unless there is a very good reason.
